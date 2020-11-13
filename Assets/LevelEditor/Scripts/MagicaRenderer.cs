@@ -221,8 +221,7 @@ public class MagicaRenderer
                     script.sizeY = (int)Math.Abs(ve.z);
                     script.sizeZ = (int)Math.Abs(ve.y);
 
-                    script.trans = new Vector3((float)Math.Floor((double)(Math.Abs(ve.x) / 2f)) / 10f, (float)Math.Floor((double)(Math.Abs(ve.z) / 2f)) / 10f, (float)Math.Floor((double)(Math.Abs(ve.y) / 2f)) / 10f);
-                    script.setOriginal();
+                    script.trans = new Vector3((float)Math.Floor((double)(Math.Abs(ve.x) / 2f)) / 10f, (float)Math.Floor((double)(Math.Abs(ve.z) / 2f)) / 10f, (float)Math.Floor((double)(Math.Abs(ve.y) / 2f)) / 10f);                    
                     script.parentVoxFile = path.Split('\\')[path.Split('\\').Length - 1];
                     shift -= script.trans;
 
@@ -245,6 +244,7 @@ public class MagicaRenderer
         foreach(GameObject valid in namedGameObjects.Values)
         {
             valid.transform.parent = validContainer.transform;
+            valid.GetComponent<TeardownProperties>().setValid();
         }
 
         validContainer.transform.parent = levelGo.transform;

@@ -15,16 +15,4 @@ public class ObjectAttributes : MonoBehaviour
     public Vector3 bRot;
     public Vector3 cRot;
     public string parentVoxFile;    
-
-    private bool original = false;
-
-    public void setOriginal()
-    {
-        original = true;
-    }
-
-    public bool isCopy()
-    {
-        return !original;
-    }
 }

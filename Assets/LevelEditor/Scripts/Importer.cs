@@ -72,7 +72,8 @@ public class Importer : MonoBehaviour
         foreach(Object obj in gameObjects)
         {
             ObjectAttributes objectAttributes = (ObjectAttributes) obj;
-            if (objectAttributes.isCopy())
+            
+            if (objectAttributes.gameObject.GetComponent<TeardownProperties>().isValid())
             {
                 float x = objectAttributes.gameObject.transform.position.x;
                 float y = objectAttributes.gameObject.transform.position.y;
