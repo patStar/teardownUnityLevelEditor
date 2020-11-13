@@ -142,7 +142,46 @@ public class Importer : MonoBehaviour
             }
         }
 
-        
+        Object[] joints = FindObjectsOfType(typeof(Joint));
+        foreach (Object obj in joints)
+        {
+            Joint joint = (Joint)obj;
+
+            float x = joint.gameObject.transform.position.x;
+            float y = joint.gameObject.transform.position.y;
+            float z = joint.gameObject.transform.position.z+0.1f;
+
+            string rot = (-joint.gameObject.transform.rotation.eulerAngles.x) + " " + (-joint.gameObject.transform.rotation.eulerAngles.y) + " " + joint.gameObject.transform.rotation.eulerAngles.z;
+            string coord = (x + " " + y + " " + (-z)).Replace(",", ".");
+
+            string limits = "";
+            if (joint.useLimits)
+            {
+                limits = "limits=\""+joint.minLimit.ToString().Replace(",", ".") + " " +joint.maxLimit.ToString().Replace(",", ".") + "\"";
+            }
+
+            string inner = "";
+            if (joint.showJointHelper)
+            {
+                inner = "\t\t<voxbox pos=\"-0.05 -0.05 -0.05\" color=\"1 0.0 0.0\" size=\"1 1 1\" prop=\"true\" collide=\"false\" />";
+            }
+
+            string line = "\t<joint pos=\"" + coord + "\" rot=\"" + rot + "\" type=\""+joint.jointType+"\" rotstrength=\""+ joint.rotStrength+ "\" rotspring=\"" + joint.rotSpring + "\" sound=\"" + joint.sound + "\" size=\"" + joint.size.ToString().Replace(",",".") + "\" "+limits;
+
+            if(inner.Length == 0)
+            {
+                line += "/>";
+                writer.WriteLine(line);
+            }
+            else
+            {
+                line += ">";
+                writer.WriteLine(line);
+                writer.WriteLine(inner);
+                writer.WriteLine("\t</joint>");
+            }
+
+        }
 
         writer.WriteLine("</scene>");
         writer.Close();
