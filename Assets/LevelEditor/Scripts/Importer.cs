@@ -81,6 +81,8 @@ public class Importer : MonoBehaviour
                 x += (float) Math.Floor(objectAttributes.sizeX / 2f) / 10;
                 z += (float) (Math.Floor(objectAttributes.sizeZ / 2f) + 1) / 10;
 
+                string rot= (-objectAttributes.gameObject.transform.rotation.eulerAngles.x) + " " + (-objectAttributes.gameObject.transform.rotation.eulerAngles.y) + " " + objectAttributes.gameObject.transform.rotation.eulerAngles.z;
+
                 TeardownProperties teardownProperties = objectAttributes.gameObject.GetComponent<TeardownProperties>();
 
                 string dynamic = "";                
@@ -90,7 +92,7 @@ public class Importer : MonoBehaviour
                 }
 
                 string coord = (x + " " + y + " " + (-z)).Replace(",", ".");
-                string line = "\t<body pos=\"" + coord + "\"" + dynamic +"><vox file=\"LEVEL\\" + objectAttributes.parentVoxFile + "\" object=\"" + objectAttributes.names[0] + "\"/></body>";
+                string line = "\t<body rot=\""+rot+"\" pos=\"" + coord + "\"" + dynamic +"><vox file=\"LEVEL\\" + objectAttributes.parentVoxFile + "\" object=\"" + objectAttributes.names[0] + "\"/></body>";
                 Debug.Log(line);
                 writer.WriteLine(line);
             }
