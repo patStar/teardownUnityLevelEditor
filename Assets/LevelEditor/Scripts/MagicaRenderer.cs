@@ -132,6 +132,7 @@ public class MagicaRenderer
     public void ImportMagicaVoxelFile(string path)
     {
         GameObject levelGo = new GameObject(path.Split('\\')[path.Split('\\').Length - 1]);
+        levelGo.AddComponent<TeardownProperties>();
         MagicaImportedFile magicaImportedFile = levelGo.AddComponent<MagicaImportedFile>();
         magicaImportedFile.voxFile = path.Split('\\')[path.Split('\\').Length - 1];
 

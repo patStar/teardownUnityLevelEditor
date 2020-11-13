@@ -118,7 +118,15 @@ public class Importer : MonoBehaviour
 
                 string coord = (x + " " + y + " " + (-z)).Replace(",", ".");
 
-                string line = "\t<body pos=\"" + coord + "\"><vox file=\"LEVEL\\" + magicaImportedFile.voxFile + "\"/></body>";
+                TeardownProperties teardownProperties = magicaImportedFile.gameObject.GetComponent<TeardownProperties>();
+
+                string texture = "";
+                if (teardownProperties.teardownTexture != TeardownProperties.TeardownTextures.No_Texture)
+                {
+                    texture = "texture=\"" + teardownProperties.teardownTexture.ToString().Split('_')[1] + " " + teardownProperties.textureSize + "\"";
+                }
+
+                string line = "\t<body pos=\"" + coord + "\"><vox "+texture+" file=\"LEVEL\\" + magicaImportedFile.voxFile + "\"/></body>";
                 Debug.Log(line);
                 writer.WriteLine(line);
             }
