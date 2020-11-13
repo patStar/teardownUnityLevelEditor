@@ -31,7 +31,8 @@ public class TeardownProperties : MonoBehaviour
     };
 
     public TeardownTextures teardownTexture = TeardownTextures.No_Texture;
-    public int textureSize = 1;
+    [Min(0f)]
+    public float textureIntensity = 1.0f;
 
     internal void preventExport()
     {

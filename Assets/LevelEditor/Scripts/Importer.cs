@@ -30,7 +30,7 @@ public class Importer : MonoBehaviour
         new Vector2(-100, -100),
         new Vector2(100, -100),
         new Vector2(100, 100),
-        new Vector2(100, -100)
+        new Vector2(-100, 100)
     };    	
 
     [ContextMenu("Import Magica File")]
@@ -89,7 +89,7 @@ public class Importer : MonoBehaviour
                 string texture = "";
                 if(teardownProperties.teardownTexture != TeardownProperties.TeardownTextures.No_Texture)
                 {
-                    texture = "texture=\""+teardownProperties.teardownTexture.ToString().Split('_')[1] + " " + teardownProperties.textureSize+"\"";                    
+                    texture = "texture=\""+teardownProperties.teardownTexture.ToString().Split('_')[1] + " " + teardownProperties.textureIntensity+"\"";                    
                 }
 
                 string dynamic = "";                
@@ -123,7 +123,7 @@ public class Importer : MonoBehaviour
                 string texture = "";
                 if (teardownProperties.teardownTexture != TeardownProperties.TeardownTextures.No_Texture)
                 {
-                    texture = "texture=\"" + teardownProperties.teardownTexture.ToString().Split('_')[1] + " " + teardownProperties.textureSize + "\"";
+                    texture = "texture=\"" + teardownProperties.teardownTexture.ToString().Split('_')[1] + " " + teardownProperties.textureIntensity + "\"";
                 }
 
                 string line = "\t<body pos=\"" + coord + "\"><vox "+texture+" file=\"LEVEL\\" + magicaImportedFile.voxFile + "\"/></body>";

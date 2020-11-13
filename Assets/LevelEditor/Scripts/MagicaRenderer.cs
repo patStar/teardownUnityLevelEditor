@@ -232,7 +232,9 @@ public class MagicaRenderer
                     if (script.names.Count > 0)
                     {
                         go.name = script.names[0];
-                    }                    
+                    }               
+                    
+                    teardownProperties.preventExport();                    
                 }
             }
         }
@@ -244,8 +246,7 @@ public class MagicaRenderer
         GameObject validContainer = new GameObject("ValidAssets");
         foreach(GameObject valid in namedGameObjects.Values)
         {
-            valid.transform.parent = validContainer.transform;
-            valid.GetComponent<TeardownProperties>().preventExport();
+            valid.transform.parent = validContainer.transform;            
         }
 
         validContainer.transform.parent = levelGo.transform;
