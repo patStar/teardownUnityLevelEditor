@@ -7,16 +7,40 @@ using UnityEngine.UI;
 public class TeardownProperties : MonoBehaviour
 {
     public bool dynamic = false;
-    private bool valid = false;
+    private bool exportable = true;
 
-    internal void setValid()
+    public enum TeardownTextures
     {
-        valid = true;
+        No_Texture,
+        Texture_0,
+        Texture_1,
+        Texture_2,
+        Texture_3,
+        Texture_4,
+        Texture_5,
+        Texture_6,
+        Texture_7,
+        Texture_8,
+        Texture_9,
+        Texture_10,
+        Texture_11,
+        Texture_12,
+        Texture_13,
+        Texture_14,
+
+    };
+
+    public TeardownTextures teardownTexture = TeardownTextures.No_Texture;
+    public int textureSize = 1;
+
+    internal void preventExport()
+    {
+        exportable = false;
     }
 
-    public bool isValid()
+    public bool isExportable()
     {
-        return valid;
+        return exportable;
     }
 }
 

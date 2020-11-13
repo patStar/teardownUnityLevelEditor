@@ -72,8 +72,8 @@ public class Importer : MonoBehaviour
         foreach(Object obj in gameObjects)
         {
             ObjectAttributes objectAttributes = (ObjectAttributes) obj;
-            
-            if (objectAttributes.gameObject.GetComponent<TeardownProperties>().isValid())
+
+            if (objectAttributes.names.Count > 0 && objectAttributes.gameObject.GetComponent<TeardownProperties>().isExportable())
             {
                 float x = objectAttributes.gameObject.transform.position.x;
                 float y = objectAttributes.gameObject.transform.position.y;
@@ -86,6 +86,12 @@ public class Importer : MonoBehaviour
 
                 TeardownProperties teardownProperties = objectAttributes.gameObject.GetComponent<TeardownProperties>();
 
+                string texture = "";
+                if(teardownProperties.teardownTexture != TeardownProperties.TeardownTextures.No_Texture)
+                {
+                    texture = "texture=\""+teardownProperties.teardownTexture.ToString().Split('_')[1] + " " + teardownProperties.textureSize+"\"";                    
+                }
+
                 string dynamic = "";                
                 if (teardownProperties.dynamic)
                 {
@@ -93,7 +99,7 @@ public class Importer : MonoBehaviour
                 }
 
                 string coord = (x + " " + y + " " + (-z)).Replace(",", ".");
-                string line = "\t<body rot=\""+rot+"\" pos=\"" + coord + "\"" + dynamic +"><vox file=\"LEVEL\\" + objectAttributes.parentVoxFile + "\" object=\"" + objectAttributes.names[0] + "\"/></body>";
+                string line = "\t<body rot=\""+rot+"\" pos=\"" + coord + "\"" + dynamic +"><vox "+texture+" file=\"LEVEL\\" + objectAttributes.parentVoxFile + "\" object=\"" + objectAttributes.names[0] + "\"/></body>";
                 Debug.Log(line);
                 writer.WriteLine(line);
             }
@@ -135,6 +141,8 @@ public class Importer : MonoBehaviour
                 writer.WriteLine(line);
             }
         }
+
+        
 
         writer.WriteLine("</scene>");
         writer.Close();

@@ -244,7 +244,7 @@ public class MagicaRenderer
         foreach(GameObject valid in namedGameObjects.Values)
         {
             valid.transform.parent = validContainer.transform;
-            valid.GetComponent<TeardownProperties>().setValid();
+            valid.GetComponent<TeardownProperties>().preventExport();
         }
 
         validContainer.transform.parent = levelGo.transform;
