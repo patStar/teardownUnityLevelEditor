@@ -10,6 +10,8 @@ public class Importer : MonoBehaviour
     public string importPath;
     public string outputPath;
 
+    public bool importAssetsOnly = false;
+
     public bool useMainLua = true;
     public bool useHeistLua= false;
 
@@ -37,7 +39,7 @@ public class Importer : MonoBehaviour
     public void Import()
     {
         MagicaRenderer renderer = new MagicaRenderer();
-        renderer.ImportMagicaVoxelFile(importPath);
+        renderer.ImportMagicaVoxelFile(importPath, assetsOnly);
     }
 
     [ContextMenu("Export To Teardown")]
@@ -117,6 +119,7 @@ public class Importer : MonoBehaviour
                 float z = magicaImportedFile.gameObject.transform.position.z;
 
                 string coord = (x + " " + y + " " + (-z)).Replace(",", ".");
+                string rot = (-magicaImportedFile.gameObject.transform.rotation.eulerAngles.x) + " " + (-magicaImportedFile.gameObject.transform.rotation.eulerAngles.y) + " " + objectAttributes.gameObject.transform.rotation.eulerAngles.z;
 
                 TeardownProperties teardownProperties = magicaImportedFile.gameObject.GetComponent<TeardownProperties>();
 
@@ -132,7 +135,7 @@ public class Importer : MonoBehaviour
                     texture = "texture=\"" + teardownProperties.teardownTexture.ToString().Split('_')[1] + " " + teardownProperties.textureIntensity + "\"";
                 }
 
-                string line = "\t<body "+dynamic+" pos=\"" + coord + "\"><vox "+texture+" file=\"LEVEL\\" + magicaImportedFile.voxFile + "\"/></body>";
+                string line = "\t<body rot=\""+rot+"\" "+dynamic+" pos=\"" + coord + "\"><vox "+texture+" file=\"LEVEL\\" + magicaImportedFile.voxFile + "\"/></body>";
                 Debug.Log(line);
                 writer.WriteLine(line);
             }
