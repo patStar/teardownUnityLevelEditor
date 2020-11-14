@@ -39,7 +39,7 @@ public class Importer : MonoBehaviour
     public void Import()
     {
         MagicaRenderer renderer = new MagicaRenderer();
-        renderer.ImportMagicaVoxelFile(importPath, assetsOnly);
+        renderer.ImportMagicaVoxelFile(importPath, importAssetsOnly);
     }
 
     [ContextMenu("Export To Teardown")]
@@ -119,7 +119,7 @@ public class Importer : MonoBehaviour
                 float z = magicaImportedFile.gameObject.transform.position.z;
 
                 string coord = (x + " " + y + " " + (-z)).Replace(",", ".");
-                string rot = (-magicaImportedFile.gameObject.transform.rotation.eulerAngles.x) + " " + (-magicaImportedFile.gameObject.transform.rotation.eulerAngles.y) + " " + objectAttributes.gameObject.transform.rotation.eulerAngles.z;
+                string rot = (-magicaImportedFile.gameObject.transform.rotation.eulerAngles.x) + " " + (-magicaImportedFile.gameObject.transform.rotation.eulerAngles.y) + " " + magicaImportedFile.gameObject.transform.rotation.eulerAngles.z;
 
                 TeardownProperties teardownProperties = magicaImportedFile.gameObject.GetComponent<TeardownProperties>();
 

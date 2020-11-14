@@ -129,12 +129,17 @@ public class MagicaRenderer
         return matrix;
     }
 
-    public void ImportMagicaVoxelFile(string path)
+    public void ImportMagicaVoxelFile(string path, bool assetsOnly)
     {
-        GameObject levelGo = new GameObject(path.Split('\\')[path.Split('\\').Length - 1]);
-        levelGo.AddComponent<TeardownProperties>();
-        MagicaImportedFile magicaImportedFile = levelGo.AddComponent<MagicaImportedFile>();
-        magicaImportedFile.voxFile = path.Split('\\')[path.Split('\\').Length - 1];
+        GameObject levelGo = null;
+
+        if (!assetsOnly)
+        {
+            levelGo = new GameObject(path.Split('\\')[path.Split('\\').Length - 1]);
+            levelGo.AddComponent<TeardownProperties>();
+            MagicaImportedFile magicaImportedFile = levelGo.AddComponent<MagicaImportedFile>();
+            magicaImportedFile.voxFile = path.Split('\\')[path.Split('\\').Length - 1];
+        }
 
         Dictionary<string, GameObject> namedGameObjects = new Dictionary<string, GameObject>();        
 
@@ -162,8 +167,7 @@ public class MagicaRenderer
                     TransformNodeChunk transformNodeChunk = shape.transform;
                     GameObject go = new GameObject();
                     ObjectAttributes script = go.AddComponent<ObjectAttributes>();
-                    TeardownProperties teardownProperties = go.AddComponent<TeardownProperties>();
-
+                    
                     MeshRenderer renderer = go.AddComponent<MeshRenderer>();
                     renderer.materials = materials.ToArray();
                     MeshFilter filter = go.AddComponent<MeshFilter>();
@@ -228,29 +232,23 @@ public class MagicaRenderer
 
                     go.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
                     go.transform.position = shift;
-                    go.transform.parent = levelGo.transform;
+                    
+                    if (!assetsOnly) { 
+                        go.transform.parent = levelGo.transform;
+                    }
+                    else
+                    {
+                        TeardownProperties teardownProperties = go.AddComponent<TeardownProperties>();
+                        teardownProperties.preventExport();
+                    }
+                    
                     if (script.names.Count > 0)
                     {
                         go.name = script.names[0];
-                    }               
-                    
-                    teardownProperties.preventExport();                    
+                    }                    
                 }
             }
         }
-
-        foreach(string name in doubleNames) {
-            namedGameObjects.Remove(name);
-        }
-
-        GameObject validContainer = new GameObject("ValidAssets");
-        foreach(GameObject valid in namedGameObjects.Values)
-        {
-            valid.transform.parent = validContainer.transform;            
-        }
-
-        validContainer.transform.parent = levelGo.transform;
-        validContainer.transform.SetSiblingIndex(0);
     }
 
     private static List<Material> ImportColors(Chunk mainChunk)
