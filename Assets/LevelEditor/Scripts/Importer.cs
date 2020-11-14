@@ -75,7 +75,7 @@ public class Importer : MonoBehaviour
         {
             ObjectAttributes objectAttributes = (ObjectAttributes) obj;
 
-            if (objectAttributes.names.Count > 0 && objectAttributes.gameObject.GetComponent<TeardownProperties>().isExportable())
+            if (objectAttributes.names.Count > 0 && objectAttributes.gameObject.GetComponent<TeardownProperties>() != null && objectAttributes.gameObject.GetComponent<TeardownProperties>().isExportable())
             {
                 float x = objectAttributes.gameObject.transform.position.x;
                 float y = objectAttributes.gameObject.transform.position.y;

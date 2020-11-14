@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using System.Text;
 using UnityEngine;
@@ -141,6 +142,7 @@ public class MagicaRenderer
             magicaImportedFile.voxFile = path.Split('\\')[path.Split('\\').Length - 1];
         }
 
+        List<GameObject> gameObjects = new List<GameObject>();
         Dictionary<string, GameObject> namedGameObjects = new Dictionary<string, GameObject>();        
 
         Chunk mainChunk = MagicaVoxelReader.ReadMagicaChunks(path);
@@ -166,6 +168,7 @@ public class MagicaRenderer
 
                     TransformNodeChunk transformNodeChunk = shape.transform;
                     GameObject go = new GameObject();
+                    gameObjects.Add(go);
                     ObjectAttributes script = go.AddComponent<ObjectAttributes>();
                     
                     MeshRenderer renderer = go.AddComponent<MeshRenderer>();
@@ -234,19 +237,35 @@ public class MagicaRenderer
                     go.transform.position = shift;
                     
                     if (!assetsOnly) { 
-                        go.transform.parent = levelGo.transform;
+                        go.transform.parent = levelGo.transform;                        
                     }
                     else
                     {
-                        TeardownProperties teardownProperties = go.AddComponent<TeardownProperties>();
-                        teardownProperties.preventExport();
+                        TeardownProperties teardownProperties = go.AddComponent<TeardownProperties>();                        
                     }
-                    
+
                     if (script.names.Count > 0)
                     {
                         go.name = script.names[0];
                     }                    
                 }
+            }
+        }
+    
+        foreach(string name in doubleNames){
+            namedGameObjects.Remove(name);
+        }
+
+        foreach (string name in doubleNames)
+        {
+            namedGameObjects.Remove(name);
+        }
+
+        foreach(GameObject g in gameObjects)
+        {
+            if (!namedGameObjects.Values.Contains(g))
+            {
+                
             }
         }
     }
