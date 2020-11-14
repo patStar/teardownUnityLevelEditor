@@ -120,13 +120,19 @@ public class Importer : MonoBehaviour
 
                 TeardownProperties teardownProperties = magicaImportedFile.gameObject.GetComponent<TeardownProperties>();
 
+				string dynamic = "";                
+                if (teardownProperties.dynamic)
+                {
+                    dynamic = " dynamic=\"true\" ";
+                }
+				
                 string texture = "";
                 if (teardownProperties.teardownTexture != TeardownProperties.TeardownTextures.No_Texture)
                 {
                     texture = "texture=\"" + teardownProperties.teardownTexture.ToString().Split('_')[1] + " " + teardownProperties.textureIntensity + "\"";
                 }
 
-                string line = "\t<body pos=\"" + coord + "\"><vox "+texture+" file=\"LEVEL\\" + magicaImportedFile.voxFile + "\"/></body>";
+                string line = "\t<body "+dynamic+" pos=\"" + coord + "\"><vox "+texture+" file=\"LEVEL\\" + magicaImportedFile.voxFile + "\"/></body>";
                 Debug.Log(line);
                 writer.WriteLine(line);
             }
