@@ -2,13 +2,25 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using TMPro;
 using UnityEngine;
+using System.Threading;
+using UnityEngine.UI;
+using System.Diagnostics;
+using UnityEngine.Networking;
 using Object = UnityEngine.Object;
 
 public class Importer : MonoBehaviour
 {
     public string importPath;
+    public string vehiclePath;
     public string outputPath;
+
+    [SerializeField] public TMP_Text WorldFile;
+    [SerializeField] public TMP_Text ObjectFolder;
+    [SerializeField] public Button WorldImportButton;
+    [SerializeField] public Button FolderImportButton;
+    [SerializeField] public Button ExportButton;
 
     public bool useMainLua = true;
     public bool useHeistLua= false;
@@ -33,11 +45,31 @@ public class Importer : MonoBehaviour
         new Vector2(100, -100)
     };    	
 
-    [ContextMenu("Import Magica File")]
-    public void Import()
+    [ContextMenu("Import Main World Magica File")]
+    public void ImportWorld()
     {
-        MagicaRenderer renderer = new MagicaRenderer();
-        renderer.ImportMagicaVoxelFile(importPath);
+        var file = WorldFile.text.Remove(WorldFile.text.Length - 1);
+        if (File.Exists(file))
+        {
+            MagicaRenderer renderer = new MagicaRenderer();
+            if (file.EndsWith(".vox"))
+                renderer.ImportMagicaVoxelFile(file);
+        }
+    }
+
+    [ContextMenu("Import Magica Files From Folder")]
+    public void ImportFolder()
+    {
+        var folder = ObjectFolder.text.Remove(ObjectFolder.text.Length - 1);
+        if (Directory.Exists(folder))
+        {
+            MagicaRenderer renderer = new MagicaRenderer();
+            foreach (string file in Directory.GetFiles(folder))
+            {
+                if(file.EndsWith(".vox"))
+                    renderer.ImportMagicaVoxelFile(file);
+            }
+        }
     }
 
     [ContextMenu("Export To Teardown")]
@@ -94,7 +126,7 @@ public class Importer : MonoBehaviour
 
                 string coord = (x + " " + y + " " + (-z)).Replace(",", ".");
                 string line = "\t<body rot=\""+rot+"\" pos=\"" + coord + "\"" + dynamic +"><vox file=\"LEVEL\\" + objectAttributes.parentVoxFile + "\" object=\"" + objectAttributes.names[0] + "\"/></body>";
-                Debug.Log(line);
+                UnityEngine.Debug.Log(line);
                 writer.WriteLine(line);
             }
 
@@ -113,7 +145,7 @@ public class Importer : MonoBehaviour
                 string coord = (x + " " + y + " " + (-z)).Replace(",", ".");
 
                 string line = "\t<body pos=\"" + coord + "\"><vox file=\"LEVEL\\" + magicaImportedFile.voxFile + "\"/></body>";
-                Debug.Log(line);
+                UnityEngine.Debug.Log(line);
                 writer.WriteLine(line);
             }
         }
@@ -131,7 +163,7 @@ public class Importer : MonoBehaviour
                 string coord = (x + " " + y + " " + (-z)).Replace(",", ".");
 
                 string line = "\t<water pos=\"" + coord + "\"/>";
-                Debug.Log(line);
+                UnityEngine.Debug.Log(line);
                 writer.WriteLine(line);
             }
         }
