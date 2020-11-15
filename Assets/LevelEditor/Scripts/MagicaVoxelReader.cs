@@ -406,6 +406,7 @@ public class ShapeNodeChunk : Chunk
     public Dictionary<string, string> attributes = new Dictionary<string, string>();
     public List<MagicaModel> childModels = new List<MagicaModel>();    
     public TransformNodeChunk transform;
+    public Vector3 singleCenter = Vector3.zero;
 
     override public string ToString()
     {

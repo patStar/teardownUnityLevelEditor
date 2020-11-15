@@ -4,6 +4,6 @@ using UnityEngine;
 
 public class MagicaImportedFile : MonoBehaviour
 {
-    public bool exportToTeardown = false;
+    public bool exportToTeardown = true;
     public string voxFile = "";
 }

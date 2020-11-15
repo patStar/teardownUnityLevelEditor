@@ -14,5 +14,6 @@ public class ObjectAttributes : MonoBehaviour
     public Vector3 aRot;
     public Vector3 bRot;
     public Vector3 cRot;
-    public string parentVoxFile;    
+    public string parentVoxFile;
+    public Vector3 singleCenter;
 }

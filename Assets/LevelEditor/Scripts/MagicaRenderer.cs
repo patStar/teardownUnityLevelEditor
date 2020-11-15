@@ -130,17 +130,13 @@ public class MagicaRenderer
         return matrix;
     }
 
-    public void ImportMagicaVoxelFile(string path, bool assetsOnly)
-    {
-        GameObject levelGo = null;
-
-        if (!assetsOnly)
-        {
-            levelGo = new GameObject(path.Split('\\')[path.Split('\\').Length - 1]);
-            levelGo.AddComponent<TeardownProperties>();
-            MagicaImportedFile magicaImportedFile = levelGo.AddComponent<MagicaImportedFile>();
-            magicaImportedFile.voxFile = path.Split('\\')[path.Split('\\').Length - 1];
-        }
+    public GameObject ImportMagicaVoxelFile(string path)
+    {        
+        GameObject levelGo = new GameObject(path.Split('\\')[path.Split('\\').Length - 1]);
+        levelGo.AddComponent<TeardownProperties>();
+        MagicaImportedFile magicaImportedFile = levelGo.AddComponent<MagicaImportedFile>();
+        magicaImportedFile.voxFile = path.Split('\\')[path.Split('\\').Length - 1];
+       
 
         List<GameObject> gameObjects = new List<GameObject>();
         Dictionary<string, GameObject> namedGameObjects = new Dictionary<string, GameObject>();        
@@ -229,6 +225,8 @@ public class MagicaRenderer
                     script.sizeY = (int)Math.Abs(ve.z);
                     script.sizeZ = (int)Math.Abs(ve.y);
 
+                    script.singleCenter = shape.singleCenter/10f;
+
                     script.trans = new Vector3((float)Math.Floor((double)(Math.Abs(ve.x) / 2f)) / 10f, (float)Math.Floor((double)(Math.Abs(ve.z) / 2f)) / 10f, (float)Math.Floor((double)(Math.Abs(ve.y) / 2f)) / 10f);                    
                     script.parentVoxFile = path.Split('\\')[path.Split('\\').Length - 1];
                     shift -= script.trans;
@@ -236,38 +234,30 @@ public class MagicaRenderer
                     go.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
                     go.transform.position = shift;
                     
-                    if (!assetsOnly) { 
-                        go.transform.parent = levelGo.transform;                        
-                    }
-                    else
-                    {
-                        TeardownProperties teardownProperties = go.AddComponent<TeardownProperties>();                        
-                    }
+                    go.transform.parent = levelGo.transform;                                                                                        
 
                     if (script.names.Count > 0)
                     {
                         go.name = script.names[0];
                     }                    
                 }
-            }
+            }            
         }
     
+        // remove double named objects since we cannot insert them properly
         foreach(string name in doubleNames){
-            namedGameObjects.Remove(name);
-        }
-
-        foreach (string name in doubleNames)
-        {
             namedGameObjects.Remove(name);
         }
 
         foreach(GameObject g in gameObjects)
         {
-            if (!namedGameObjects.Values.Contains(g))
+            if (namedGameObjects.Values.Contains(g))
             {
-                
+                TeardownProperties teardownProperties = g.AddComponent<TeardownProperties>();
             }
         }
+
+        return levelGo;
     }
 
     private static List<Material> ImportColors(Chunk mainChunk)
@@ -349,13 +339,33 @@ public class MagicaRenderer
         int sizeY = (int)Math.Abs(ve.y);
         int sizeZ = (int)Math.Abs(ve.z);
 
+        // WTF? Dont drink and code!!!
         Vector3 correction = new Vector3((ve.x < 0) ? Math.Abs(ve.x)-1 : 0, (ve.y < 0) ? Math.Abs(ve.y) - 1 : 0, (ve.z < 0) ? Math.Abs(ve.z) - 1 : 0);        
          
         RenderVoxel[,,] voxelArray = new RenderVoxel[sizeX, sizeY, sizeZ];
 
+        int maxX = 0;
+        int maxY = 0;
+        int maxZ = 0;
+        int minX = voxelChunk.sizeChunk.sizeX;
+        int minY = voxelChunk.sizeChunk.sizeY;
+        int minZ = voxelChunk.sizeChunk.sizeZ;
         foreach (Voxel voxel in voxelChunk.voxels)
         {
-            Vector3 rotVec = rotateVector(new Vector3(voxel.x, voxel.y, voxel.z), shape.transform) + correction;            
+            if (voxel.x < minX) minX = voxel.x;
+            if (voxel.y < minY) minY = voxel.y;
+            if (voxel.z < minZ) minZ = voxel.z;
+            if (voxel.x > maxX) maxX = voxel.x;
+            if (voxel.y > maxY) maxY = voxel.y;
+            if (voxel.z > maxZ) maxZ = voxel.z;
+        }
+
+        shape.singleCenter = new Vector3((float) Math.Ceiling(minX + (maxX - minX)/2f), (float)Math.Ceiling(minY + (maxY - minY) / 2f), minZ);
+        shape.singleCenter = rotateVector(shape.singleCenter, shape.transform);
+
+        foreach (Voxel voxel in voxelChunk.voxels)
+        {
+            Vector3 rotVec = rotateVector(new Vector3(voxel.x, voxel.y, voxel.z), shape.transform)+ correction;
             voxelArray[(int)rotVec.x, (int)rotVec.y, (int)rotVec.z] = new RenderVoxel(voxel.colorIndex);
         }      
 
@@ -546,11 +556,6 @@ public class MagicaRenderer
                 }
             }
         }
-
-        vertices.Add(new Vector3(0, 0, 0));
-        vertices.Add(new Vector3(sizeX-1, sizeY-1, sizeZ-1));
-        uvs.Add(new Vector2(0, 0));
-        uvs.Add(new Vector2(0, 0));
 
         Mesh mesh = new Mesh();
         mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
