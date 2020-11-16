@@ -11,6 +11,7 @@ public class Joint : MonoBehaviour
         prismatic
     }
 
+    public string tags = "";
     public JointType jointType = JointType.ball;
     public float size = 0.1f;
     public float rotStrength = 0;

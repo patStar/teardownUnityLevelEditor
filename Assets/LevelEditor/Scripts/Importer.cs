@@ -74,6 +74,12 @@ public class Importer : MonoBehaviour
                     texture = "texture=\"" + teardownProperties.teardownTexture.ToString().Split('_')[1] + " " + teardownProperties.textureIntensity + "\"";
                 }
 
+                string tags = "";
+                if (teardownProperties.tags.Length > 0)
+                {
+                    tags = "tags=\"" + teardownProperties.tags + "\"";
+                }
+
                 string dynamic = "";
                 if (teardownProperties.dynamic)
                 {
@@ -81,7 +87,7 @@ public class Importer : MonoBehaviour
                 }
 
                 string coord = (x + " " + y + " " + (-z)).Replace(",", ".");
-                string line = "\t<body rot=\"" + rot + "\" pos=\"" + coord + "\"" + dynamic + "><vox " + texture + " file=\"LEVEL\\" + objectAttributes.parentVoxFile + "\" object=\"" + objectAttributes.names[0] + "\"/></body>";
+                string line = "\t<body rot=\"" + rot + "\" pos=\"" + coord + "\"" + dynamic + "><vox " + tags + " " + texture + " file=\"LEVEL\\" + objectAttributes.parentVoxFile + "\" object=\"" + objectAttributes.names[0] + "\"/></body>";
                 Debug.Log(line);
                 writer.WriteLine(line);
             }
@@ -112,13 +118,19 @@ public class Importer : MonoBehaviour
                     dynamic = " dynamic=\"true\" ";
                 }
 
+                string tags = "";
+                if(teardownProperties.tags.Length > 0)
+                {
+                    tags = "tags=\""+teardownProperties.tags+"\"";
+                }
+
                 string texture = "";
                 if (teardownProperties.teardownTexture != TeardownProperties.TeardownTextures.No_Texture)
                 {
                     texture = "texture=\"" + teardownProperties.teardownTexture.ToString().Split('_')[1] + " " + teardownProperties.textureIntensity + "\"";
                 }
 
-                string line = "\t<body rot=\"" + rot + "\" " + dynamic + " pos=\"" + coord + "\"><vox " + texture + " file=\"LEVEL\\" + magicaImportedFile.voxFile + "\"/></body>";
+                string line = "\t<body rot=\"" + rot + "\" " + dynamic + " pos=\"" + coord + "\"><vox " + tags + "  " + texture + " file=\"LEVEL\\" + magicaImportedFile.voxFile + "\"/></body>";
 
                 writer.WriteLine(line);
             }
@@ -157,6 +169,11 @@ public class Importer : MonoBehaviour
         {
             VoxBox voxBox = (VoxBox)obj;
 
+            string tags = "";
+            if (voxBox.tags.Length > 0)
+            {
+                tags = "tags=\"" + voxBox.tags + "\"";
+            }
 
             float x = voxBox.gameObject.transform.position.x;
             float y = voxBox.gameObject.transform.position.y;
@@ -168,7 +185,7 @@ public class Importer : MonoBehaviour
             string color = (voxBox.color.r + " " + voxBox.color.g + " " + voxBox.color.b).Replace(",", ".");
             string size = ((int)Math.Round(voxBox.gameObject.transform.localScale.x*10) + " " + (int)Math.Round(voxBox.gameObject.transform.localScale.y * 10) + " " + (int)Math.Round(voxBox.gameObject.transform.localScale.z * 10)).Replace(",", ".");
 
-            writer.WriteLine("\t<body><voxbox rot=\"" + rot + "\" pos=\"" + coord + "\" color=\""+color+"\" size=\""+size+"\" prop=\"" + voxBox.dynamic.ToString().ToLower() + "\" collide=\"" + voxBox.collide.ToString().ToLower() + "\" /></body>");
+            writer.WriteLine("\t<body><voxbox " + tags + " rot=\"" + rot + "\" pos=\"" + coord + "\" color=\""+color+"\" size=\""+size+"\" prop=\"" + voxBox.dynamic.ToString().ToLower() + "\" collide=\"" + voxBox.collide.ToString().ToLower() + "\" /></body>");
         }
     }
 
@@ -178,6 +195,12 @@ public class Importer : MonoBehaviour
         foreach (Object obj in lights)
         {
             Light light = (Light)obj;
+
+            string tags = "";
+            if (light.tags.Length > 0)
+            {
+                tags = "tags=\"" + light.tags + "\"";
+            }
 
             float x = light.gameObject.transform.position.x;
             float y = light.gameObject.transform.position.y;
@@ -189,7 +212,7 @@ public class Importer : MonoBehaviour
 
             string color = (light.color.r + " " + light.color.g + " " + light.color.b).Replace(",", ".");
 
-            writer.WriteLine("\t<light rot=\"" + rot + "\" pos=\"" + coord + "\" type=\""+light.lightType+ "\" color=\"" + color + "\" scale=\"" + light.scale.ToString().Replace(",", ".") + "\" glare=\"" + light.glare.ToString().Replace(",", ".") + "\" unshadowed=\"" + light.unshadowed.ToString().Replace(",", ".") + "\" size=\"" + light.size.ToString().Replace(",", ".") + "\" penumbra=\"" + light.penumbra.ToString().Replace(",", ".") + "\" angle=\"" + light.angle.ToString().Replace(",", ".") + "\"/>");       
+            writer.WriteLine("\t<light " + tags + " rot=\"" + rot + "\" pos=\"" + coord + "\" type=\""+light.lightType+ "\" color=\"" + color + "\" scale=\"" + light.scale.ToString().Replace(",", ".") + "\" glare=\"" + light.glare.ToString().Replace(",", ".") + "\" unshadowed=\"" + light.unshadowed.ToString().Replace(",", ".") + "\" size=\"" + light.size.ToString().Replace(",", ".") + "\" penumbra=\"" + light.penumbra.ToString().Replace(",", ".") + "\" angle=\"" + light.angle.ToString().Replace(",", ".") + "\"/>");       
         }
     }
 
@@ -204,7 +227,7 @@ public class Importer : MonoBehaviour
         float y = spawnPoint.gameObject.transform.position.y;
         float z = spawnPoint.gameObject.transform.position.z;
 
-        string coord = (x + " " + y + " " + (-z)).Replace(",", ".");
+        string coord = (x + " " + y + " " + (-z)).Replace(",", "."); 
 
         string line = "\t<spawnpoint pos=\"" + coord + "\"/>";
         Debug.Log(line);
@@ -256,6 +279,12 @@ public class Importer : MonoBehaviour
             float y = joint.gameObject.transform.position.y;
             float z = joint.gameObject.transform.position.z + 0.1f;
 
+            string tags = "";
+            if (joint.tags.Length > 0)
+            {
+                tags = "tags=\"" + joint.tags + "\"";
+            }
+
             string rot = ((-joint.gameObject.transform.rotation.eulerAngles.x) + " " + (-joint.gameObject.transform.rotation.eulerAngles.y) + " " + joint.gameObject.transform.rotation.eulerAngles.z).Replace(",", "."); ;
             string coord = (x + " " + y + " " + (-z)).Replace(",", ".");
 
@@ -271,7 +300,7 @@ public class Importer : MonoBehaviour
                 inner = "\t\t<voxbox pos=\"-0.05 -0.05 -0.05\" color=\"1 0.0 0.0\" size=\"1 1 1\" prop=\"true\" collide=\"false\" />";
             }
 
-            string line = "\t<joint pos=\"" + coord + "\" rot=\"" + rot + "\" type=\"" + joint.jointType + "\" rotstrength=\"" + joint.rotStrength + "\" rotspring=\"" + joint.rotSpring + "\" sound=\"" + joint.sound + "\" size=\"" + joint.size.ToString().Replace(",", ".") + "\" " + limits;
+            string line = "\t<joint "+tags+" pos=\"" + coord + "\" rot=\"" + rot + "\" type=\"" + joint.jointType + "\" rotstrength=\"" + joint.rotStrength + "\" rotspring=\"" + joint.rotSpring + "\" sound=\"" + joint.sound + "\" size=\"" + joint.size.ToString().Replace(",", ".") + "\" " + limits;
 
             if (inner.Length == 0)
             {

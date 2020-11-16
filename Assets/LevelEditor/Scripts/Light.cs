@@ -10,6 +10,7 @@ public class Light : MonoBehaviour
         area
     };
 
+    public string tags = "";
     public LightType lightType = LightType.area;
     public Color color = Color.blue;
     public float scale = 20;

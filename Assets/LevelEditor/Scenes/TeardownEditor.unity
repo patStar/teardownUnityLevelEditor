@@ -150,7 +150,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe587529a4401a744909766641199133, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  importPath: G:\Steam\SteamApps\common\Teardown\create\island\pickup.vox
+  importPath: G:\Steam\SteamApps\common\Teardown\create\island\islands.vox
   outputPath: G:\Steam\SteamApps\common\Teardown\create\island.xml
   useMainLua: 1
   useHeistLua: 0

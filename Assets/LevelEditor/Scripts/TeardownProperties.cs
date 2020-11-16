@@ -8,6 +8,7 @@ public class TeardownProperties : MonoBehaviour
 {
     public bool dynamic = false;
     private bool exportable = true;
+    public string tags = "";
 
     public enum TeardownTextures
     {
