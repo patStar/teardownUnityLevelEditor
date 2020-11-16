@@ -1,19 +1,20 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Numerics;
 using UnityEngine;
+using Vector3 = UnityEngine.Vector3;
 
 public class ObjectAttributes : MonoBehaviour
 {
+    public string parentVoxFile; 
     public List<string> names = new List<string>();
-    public List<Vector3> shifts = new List<Vector3>();
+
+    public Vector3 magicaTotalSize = Vector3.zero;
+    
+    public Vector3 centerOfMagicaMass = Vector3.zero;
+    public Vector3 bottomCenterOfVoxelMass = Vector3.zero;
+    public List<Vector3> magicaTransitions = new List<Vector3>();
+
     public List<string> rotations = new List<string>();
-    public int sizeX;
-    public int sizeY;
-    public int sizeZ;
-    public Vector3 trans = Vector3.zero;
-    public Vector3 aRot;
-    public Vector3 bRot;
-    public Vector3 cRot;
-    public string parentVoxFile;
-    public Vector3 singleCenter;
+    internal List<Vector3[]> rotationMatrices = new List<Vector3[]>();
 }

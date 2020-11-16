@@ -58,11 +58,11 @@ public class Importer : MonoBehaviour
 
             if (objectAttributes.names.Count > 0 && objectAttributes.gameObject.GetComponent<TeardownProperties>() != null && objectAttributes.gameObject.GetComponent<TeardownProperties>().isExportable())
             {
-                Debug.Log(objectAttributes.singleCenter);
+                Debug.Log(objectAttributes.bottomCenterOfVoxelMass);
 
-                float x = objectAttributes.gameObject.transform.position.x + objectAttributes.singleCenter.x;
-                float y = objectAttributes.gameObject.transform.position.y + objectAttributes.singleCenter.z;
-                float z = objectAttributes.gameObject.transform.position.z + objectAttributes.singleCenter.y + 0.1f;
+                float x = objectAttributes.gameObject.transform.position.x;
+                float y = objectAttributes.gameObject.transform.position.y;
+                float z = objectAttributes.gameObject.transform.position.z + 0.1f;
 
                 string rot = ((-objectAttributes.gameObject.transform.rotation.eulerAngles.x) + " " + (-objectAttributes.gameObject.transform.rotation.eulerAngles.y) + " " + objectAttributes.gameObject.transform.rotation.eulerAngles.z).Replace(",", "."); ;
 
@@ -119,7 +119,7 @@ public class Importer : MonoBehaviour
                 }
 
                 string line = "\t<body rot=\"" + rot + "\" " + dynamic + " pos=\"" + coord + "\"><vox " + texture + " file=\"LEVEL\\" + magicaImportedFile.voxFile + "\"/></body>";
-                Debug.Log(line);
+
                 writer.WriteLine(line);
             }
         }
@@ -317,7 +317,7 @@ public class Importer : MonoBehaviour
 
             Vector3 vehiclePosition = vehicle.gameObject.transform.position;
             Vector3 centerOfBodyPosition = new Vector3(body.transform.position.x, 0, body.transform.position.z);
-            Vector3 bodySize = new Vector3(body.GetComponent<ObjectAttributes>().sizeX, 0, body.GetComponent<ObjectAttributes>().sizeZ) / 10f;
+            Vector3 bodySize = new Vector3(body.GetComponent<ObjectAttributes>().magicaTotalSize.x, 0, body.GetComponent<ObjectAttributes>().magicaTotalSize.z) / 10f;
 
             string vehiclePositionString = (vehiclePosition.x + " " + vehiclePosition.y + " " + -vehiclePosition.z).Replace(",", ".");
 
@@ -331,11 +331,11 @@ public class Importer : MonoBehaviour
             {
                 ObjectAttributes wheelAttributes = wheel.GetComponent<ObjectAttributes>();
 
-                float dx = wheelAttributes.sizeX / 20f;
-                float dy = -wheelAttributes.sizeY / 20f;
-                float dz = wheelAttributes.sizeZ % 2 == 0 ? 0 : 0.05f;
+                float dx = wheelAttributes.magicaTotalSize.x / 20f;
+                float dy = -wheelAttributes.magicaTotalSize.y / 20f;
+                float dz = wheelAttributes.magicaTotalSize.z % 2 == 0 ? 0 : 0.05f;
 
-                Vector3 wheelPosition = wheel.transform.position - centerOfBodyPosition - bodySize / 2f + new Vector3(0.05f, -dy + dz, dz + wheelAttributes.sizeZ / 20f);
+                Vector3 wheelPosition = wheel.transform.position - centerOfBodyPosition - bodySize / 2f + new Vector3(0.05f, -dy + dz, dz + wheelAttributes.magicaTotalSize.z / 20f);
 
                 string wheelPositionString = (wheelPosition.x + " " + wheelPosition.y + " " + -wheelPosition.z).Replace(",", ".");
 

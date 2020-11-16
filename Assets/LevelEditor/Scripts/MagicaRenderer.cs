@@ -172,7 +172,7 @@ public class MagicaRenderer
                     MeshFilter filter = go.AddComponent<MeshFilter>();
                     filter.mesh = meshAndColors.mesh;
 
-                    Vector3 shift = new Vector3(0, 0, 0);
+                    Vector3 shift = Vector3.zero; //new Vector3(script.singleCenter.x, 0, script.singleCenter.y);
                     while (transformNodeChunk != null)
                     {
                         if (transformNodeChunk.attributes.Count > 0 && transformNodeChunk.attributes.ContainsKey("_name"))
@@ -198,15 +198,13 @@ public class MagicaRenderer
                         }
 
                         Vector3[] rotationMatrix = getRotationMatrix(transformNodeChunk);
-                        script.aRot = rotationMatrix[0];
-                        script.bRot = rotationMatrix[1];
-                        script.cRot = rotationMatrix[2];
+                        script.rotationMatrices.Add(rotationMatrix);                        
 
                         if (transformNodeChunk.frameAttributes[0].ContainsKey("_t"))
                         {
                             string[] coords = transformNodeChunk.frameAttributes[0]["_t"].Split(' ');
                             Vector3 currentShift = new Vector3(float.Parse(coords[0]) / 10f, float.Parse(coords[2]) / 10f, float.Parse(coords[1]) / 10f); ;
-                            script.shifts.Add(currentShift);
+                            script.magicaTransitions.Add(currentShift);
                             shift += currentShift;
                         }
                         if (transformNodeChunk.group != null && transformNodeChunk.group.transform != null)
@@ -221,15 +219,15 @@ public class MagicaRenderer
 
                     Vector3 ve = rotateVector(new Vector3(voxelChunk.sizeChunk.sizeX, voxelChunk.sizeChunk.sizeY, voxelChunk.sizeChunk.sizeZ), shape.transform);
 
-                    script.sizeX = (int) Math.Abs(ve.x);
-                    script.sizeY = (int)Math.Abs(ve.z);
-                    script.sizeZ = (int)Math.Abs(ve.y);
+                    script.magicaTotalSize = new Vector3(Math.Abs(ve.x), Math.Abs(ve.z), Math.Abs(ve.y));
 
-                    script.singleCenter = shape.singleCenter/10f;
+                    script.bottomCenterOfVoxelMass = shape.singleCenter/10f;
 
-                    script.trans = new Vector3((float)Math.Floor((double)(Math.Abs(ve.x) / 2f)) / 10f, (float)Math.Floor((double)(Math.Abs(ve.z) / 2f)) / 10f, (float)Math.Floor((double)(Math.Abs(ve.y) / 2f)) / 10f);                    
+                    script.centerOfMagicaMass = new Vector3((float)Math.Floor((double)(Math.Abs(ve.x) / 2f)) / 10f, (float)Math.Floor((double)(Math.Abs(ve.z) / 2f)) / 10f, (float)Math.Floor((double)(Math.Abs(ve.y) / 2f)) / 10f);                    
                     script.parentVoxFile = path.Split('\\')[path.Split('\\').Length - 1];
-                    shift -= script.trans;
+                    //shift -= script.trans;
+                    shift += new Vector3(script.bottomCenterOfVoxelMass.x - script.centerOfMagicaMass.x, script.bottomCenterOfVoxelMass.y- script.centerOfMagicaMass.y, script.bottomCenterOfVoxelMass.z - script.centerOfMagicaMass.z);
+                    //shift += (script.bottomCenterOfVoxelMass - script.centerOfMagicaMass);
 
                     go.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
                     go.transform.position = shift;
@@ -344,30 +342,25 @@ public class MagicaRenderer
          
         RenderVoxel[,,] voxelArray = new RenderVoxel[sizeX, sizeY, sizeZ];
 
-        int maxX = 0;
-        int maxY = 0;
-        int maxZ = 0;
-        int minX = voxelChunk.sizeChunk.sizeX;
-        int minY = voxelChunk.sizeChunk.sizeY;
-        int minZ = voxelChunk.sizeChunk.sizeZ;
+        float maxX = 0;
+        float maxY = 0;
+        float maxZ = 0;
+        float minX = sizeX;
+        float minY = sizeY;
+        float minZ = sizeZ;
         foreach (Voxel voxel in voxelChunk.voxels)
         {
-            if (voxel.x < minX) minX = voxel.x;
-            if (voxel.y < minY) minY = voxel.y;
-            if (voxel.z < minZ) minZ = voxel.z;
-            if (voxel.x > maxX) maxX = voxel.x;
-            if (voxel.y > maxY) maxY = voxel.y;
-            if (voxel.z > maxZ) maxZ = voxel.z;
+            Vector3 rotVec = rotateVector(new Vector3(voxel.x, voxel.y, voxel.z), shape.transform) + correction;
+            voxelArray[(int)rotVec.x, (int)rotVec.y, (int)rotVec.z] = new RenderVoxel(voxel.colorIndex);
+            if (rotVec.x < minX) minX = rotVec.x;
+            if (rotVec.y < minY) minY = rotVec.y;
+            if (rotVec.z < minZ) minZ = rotVec.z;
+            if (rotVec.x > maxX) maxX = rotVec.x;
+            if (rotVec.y > maxY) maxY = rotVec.y;
+            if (rotVec.z > maxZ) maxZ = rotVec.z;
         }
 
-        shape.singleCenter = new Vector3((float) Math.Ceiling(minX + (maxX - minX)/2f), (float)Math.Ceiling(minY + (maxY - minY) / 2f), minZ);
-        shape.singleCenter = rotateVector(shape.singleCenter, shape.transform);
-
-        foreach (Voxel voxel in voxelChunk.voxels)
-        {
-            Vector3 rotVec = rotateVector(new Vector3(voxel.x, voxel.y, voxel.z), shape.transform)+ correction;
-            voxelArray[(int)rotVec.x, (int)rotVec.y, (int)rotVec.z] = new RenderVoxel(voxel.colorIndex);
-        }      
+        shape.singleCenter = new Vector3((float) Math.Ceiling(minX + (maxX - minX)/2f), minZ, (float)Math.Ceiling(minY + (maxY - minY) / 2f));                   
 
         // gravity first              
         for (int z=0; z< sizeZ; z++)
@@ -405,13 +398,18 @@ public class MagicaRenderer
         List<int>[] trianglesByColor = new List<int>[256];
         List<int> colorOrder = new List<int>();        
 
-        for (int z = 0; z < sizeZ; z++)
+        for (int _z = 0; _z < sizeZ; _z++)
         {
-            for (int y = 0; y < sizeY; y++)
+            for (int _y = 0; _y < sizeY; _y++)
             {
-                for (int x = 0; x < sizeX; x++)
+                for (int _x = 0; _x < sizeX; _x++)
                 {                    
-                    RenderVoxel renderVoxel = voxelArray[x, y, z];
+                    RenderVoxel renderVoxel = voxelArray[_x, _y, _z];
+
+                    float x = _x - shape.singleCenter.x;
+                    float y = _y - shape.singleCenter.z;
+                    float z = _z - shape.singleCenter.y;
+
                     if (renderVoxel == null)
                     {
                         continue;

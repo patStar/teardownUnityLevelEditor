@@ -43,8 +43,6 @@ public class VehicleImporter : MonoBehaviour
             }
 
             ObjectAttributes bodyAttributes = body.GetComponent<ObjectAttributes>();
-            Debug.Log(bodyAttributes.sizeX / 2f);
-            Debug.Log(bodyAttributes.sizeZ / 2f);                     
         }        
     }
 }
