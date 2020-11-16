@@ -4,15 +4,7 @@ using UnityEngine;
 
 public class VoxBox : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    public bool dynamic = true;
+    public bool collide = true;
+    public Color color = Color.red;    
 }

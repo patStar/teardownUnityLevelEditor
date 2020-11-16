@@ -144,9 +144,32 @@ public class Importer : MonoBehaviour
 
         exportLights(writer);
         exportSpawnPoint(writer);
+        exportVoxBox(writer);
 
         writer.WriteLine("</scene>");
         writer.Close();
+    }
+
+    private void exportVoxBox(StreamWriter writer)
+    {
+        Object[] voxBoxes = FindObjectsOfType(typeof(VoxBox));
+        foreach (Object obj in voxBoxes)
+        {
+            VoxBox voxBox = (VoxBox)obj;
+
+
+            float x = voxBox.gameObject.transform.position.x;
+            float y = voxBox.gameObject.transform.position.y;
+            float z = voxBox.gameObject.transform.position.z + 0.1f;
+
+            string rot = ((-voxBox.gameObject.transform.rotation.eulerAngles.x) + " " + (-voxBox.gameObject.transform.rotation.eulerAngles.y) + " " + voxBox.gameObject.transform.rotation.eulerAngles.z).Replace(",", "."); ;
+            string coord = (x + " " + y + " " + (-z)).Replace(",", ".");
+
+            string color = (voxBox.color.r + " " + voxBox.color.g + " " + voxBox.color.b).Replace(",", ".");
+            string size = ((int)Math.Round(voxBox.gameObject.transform.localScale.x*10) + " " + (int)Math.Round(voxBox.gameObject.transform.localScale.y * 10) + " " + (int)Math.Round(voxBox.gameObject.transform.localScale.z * 10)).Replace(",", ".");
+
+            writer.WriteLine("\t<body><voxbox rot=\"" + rot + "\" pos=\"" + coord + "\" color=\""+color+"\" size=\""+size+"\" prop=\"" + voxBox.dynamic.ToString().ToLower() + "\" collide=\"" + voxBox.collide.ToString().ToLower() + "\" /></body>");
+        }
     }
 
     private void exportLights(StreamWriter writer)
