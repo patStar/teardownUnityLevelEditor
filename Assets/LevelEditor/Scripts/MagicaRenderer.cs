@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -132,10 +133,10 @@ public class MagicaRenderer
 
     public GameObject ImportMagicaVoxelFile(string path)
     {        
-        GameObject levelGo = new GameObject(path.Split('\\')[path.Split('\\').Length - 1]);
+        GameObject levelGo = new GameObject(Path.GetFileName(path));
         levelGo.AddComponent<TeardownProperties>();
         MagicaImportedFile magicaImportedFile = levelGo.AddComponent<MagicaImportedFile>();
-        magicaImportedFile.voxFile = path.Split('\\')[path.Split('\\').Length - 1];
+        magicaImportedFile.voxFile = Path.GetFileName(path);
        
 
         List<GameObject> gameObjects = new List<GameObject>();
@@ -224,7 +225,7 @@ public class MagicaRenderer
                     script.bottomCenterOfVoxelMass = shape.singleCenter/10f;
 
                     script.centerOfMagicaMass = new Vector3((float)Math.Floor((double)(Math.Abs(ve.x) / 2f)) / 10f, (float)Math.Floor((double)(Math.Abs(ve.z) / 2f)) / 10f, (float)Math.Floor((double)(Math.Abs(ve.y) / 2f)) / 10f);                    
-                    script.parentVoxFile = path.Split('\\')[path.Split('\\').Length - 1];
+                    script.parentVoxFile = Path.GetFileName(path);
                     //shift -= script.trans;
                     shift += new Vector3(script.bottomCenterOfVoxelMass.x - script.centerOfMagicaMass.x, script.bottomCenterOfVoxelMass.y- script.centerOfMagicaMass.y, script.bottomCenterOfVoxelMass.z - script.centerOfMagicaMass.z);
                     //shift += (script.bottomCenterOfVoxelMass - script.centerOfMagicaMass);
