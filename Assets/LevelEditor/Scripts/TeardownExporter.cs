@@ -77,7 +77,7 @@ public class TeardownExporter : MonoBehaviour
         foreach (Object obj in gameObjects)
         {                          
             ObjectAttributes objectAttributes = (ObjectAttributes)obj;
-            if (objectAttributes.gameObject.GetComponent<EscapeVehicle>() != null) continue;
+            if (objectAttributes.gameObject.GetComponent<EscapeVehicle>() != null) continue;            
 
             MagicaImportedFile wholeFile = objectAttributes.gameObject.GetComponentInParent<MagicaImportedFile>();
             if(wholeFile != null)
@@ -87,8 +87,6 @@ public class TeardownExporter : MonoBehaviour
 
             if (objectAttributes.names.Count > 0 && objectAttributes.gameObject.GetComponent<TeardownProperties>() != null && objectAttributes.gameObject.GetComponent<TeardownProperties>().isExportable())
             {
-                Debug.Log(objectAttributes.bottomCenterOfVoxelMass);
-
                 float x = objectAttributes.gameObject.transform.position.x;
                 float y = objectAttributes.gameObject.transform.position.y;
                 float z = objectAttributes.gameObject.transform.position.z + 0.1f;
@@ -113,7 +111,7 @@ public class TeardownExporter : MonoBehaviour
                     {
                         if (target.useLevelFolderForImage)
                         {
-                            imgPath = "../../../../create/" + target.targetImage;
+                            imgPath = "../../../../create/" + levelName + "/" +target.targetImage;
                         }
                         else
                         {
