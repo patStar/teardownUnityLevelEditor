@@ -34,17 +34,7 @@ public class TeardownProperties : MonoBehaviour
     public TeardownTextures teardownTexture = TeardownTextures.No_Texture;
     [Min(0f)]
     public float textureIntensity = 1.0f;
-
-    public int valueableValue = 0;    
     
-    public bool isTarget = false;
-    public bool isOptionalTarget = false;
-    public bool isDestroyTarget = false;
-    public bool isHiddenTarget = false;
-    public string targetName = "";
-    public string targetDetail = "";
-    public string targetDescription = "";
-    public string targetImage = "";
     public float explosionStrength = 0;
 
     internal void preventExport()

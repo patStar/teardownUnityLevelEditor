@@ -74,10 +74,36 @@ public class Importer : MonoBehaviour
                     texture = "texture=\"" + teardownProperties.teardownTexture.ToString().Split('_')[1] + " " + teardownProperties.textureIntensity + "\"";
                 }
 
-                string tags = "";
-                if (teardownProperties.tags.Length > 0)
+                string description = "";
+                Target target = objectAttributes.gameObject.GetComponent<Target>();
+                if (target != null)
                 {
-                    tags = "tags=\"" + teardownProperties.tags + "\"";
+                    description = " desc=\"" + target.targetName + ";" + target.targetDetail + ";" + target.targetDescription + ";" + target.targetImage + "\" ";
+                }
+
+                string tags = "";
+                if (teardownProperties.tags.Length > 0 || target != null)
+                {
+                    string tagsInternal = teardownProperties.tags;
+                    
+                    if (target != null)
+                    {
+                        string targetTag = " target";
+                        if (!target.targetType.Equals(Target.TargetType.standard))
+                        {
+                            targetTag += target.targetType.ToString().ToLower();
+                        }
+                        tagsInternal += targetTag;
+                        if (target.isOptionalTarget)
+                        {
+                            tagsInternal += " optional";
+                        }
+                        if (target.isHiddenTarget)
+                        {
+                            tagsInternal += " hidden";
+                        }
+                    }
+                    tags = "tags=\"" + tagsInternal + "\"";
                 }
 
                 string dynamic = "";
@@ -86,8 +112,8 @@ public class Importer : MonoBehaviour
                     dynamic = " dynamic=\"true\" ";
                 }
 
-    string coord = (x + " " + y + " " + (-z)).Replace(",", ".");
-                string line = "\t<body rot=\"" + rot + "\" pos=\"" + coord + "\"" + dynamic + "><vox " + tags + " " + texture + " file=\"LEVEL\\" + objectAttributes.parentVoxFile + "\" object=\"" + objectAttributes.names[0] + "\"/></body>";
+                string coord = (x + " " + y + " " + (-z)).Replace(",", ".");
+                string line = "\t<body " + tags + " " + description + " rot=\"" + rot + "\" pos=\"" + coord + "\"" + dynamic + "><vox " + texture + " file=\"LEVEL\\" + objectAttributes.parentVoxFile + "\" object=\"" + objectAttributes.names[0] + "\"/></body>";
                 Debug.Log(line);
                 writer.WriteLine(line);
             }
@@ -118,10 +144,37 @@ public class Importer : MonoBehaviour
                     dynamic = " dynamic=\"true\" ";
                 }
 
-                string tags = "";
-                if(teardownProperties.tags.Length > 0)
+                string description = "";
+                Target target = magicaImportedFile.gameObject.GetComponent<Target>();
+                if (target != null)
                 {
-                    tags = "tags=\""+teardownProperties.tags+"\"";
+                    description = " desc=\"" + target.targetName + ";" + target.targetDetail + ";" + target.targetDescription + ";" + target.targetImage + "\" ";
+                }
+
+                string tags = "";
+                if (teardownProperties.tags.Length > 0 || target != null)
+                {
+                    string tagsInternal = teardownProperties.tags;
+
+                    if (target != null)
+                    {
+                        string targetTag = " target";
+                        if (!target.targetType.Equals(Target.TargetType.standard))
+                        {
+                            targetTag += target.targetType.ToString().ToLower();
+                        }
+                        tagsInternal += targetTag;
+
+                        if (target.isOptionalTarget)
+                        {
+                            tagsInternal += " optional";
+                        }
+                        if (target.isHiddenTarget)
+                        {
+                            tagsInternal += " hidden";
+                        }
+                    }
+                    tags = "tags=\"" + tagsInternal + "\"";
                 }
 
                 string texture = "";
@@ -130,7 +183,7 @@ public class Importer : MonoBehaviour
                     texture = "texture=\"" + teardownProperties.teardownTexture.ToString().Split('_')[1] + " " + teardownProperties.textureIntensity + "\"";
                 }
 
-                string line = "\t<body rot=\"" + rot + "\" " + dynamic + " pos=\"" + coord + "\"><vox " + tags + "  " + texture + " file=\"LEVEL\\" + magicaImportedFile.voxFile + "\"/></body>";
+                string line = "\t<body " + tags + " " + description+" rot=\"" + rot + "\" " + dynamic + " pos=\"" + coord + "\"><vox " + texture + " file=\"LEVEL\\" + magicaImportedFile.voxFile + "\"/></body>";
 
                 writer.WriteLine(line);
             }
