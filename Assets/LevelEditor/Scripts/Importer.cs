@@ -86,7 +86,7 @@ public class Importer : MonoBehaviour
                     dynamic = " dynamic=\"true\" ";
                 }
 
-                string coord = (x + " " + y + " " + (-z)).Replace(",", ".");
+    string coord = (x + " " + y + " " + (-z)).Replace(",", ".");
                 string line = "\t<body rot=\"" + rot + "\" pos=\"" + coord + "\"" + dynamic + "><vox " + tags + " " + texture + " file=\"LEVEL\\" + objectAttributes.parentVoxFile + "\" object=\"" + objectAttributes.names[0] + "\"/></body>";
                 Debug.Log(line);
                 writer.WriteLine(line);
@@ -300,7 +300,7 @@ public class Importer : MonoBehaviour
                 inner = "\t\t<voxbox pos=\"-0.05 -0.05 -0.05\" color=\"1 0.0 0.0\" size=\"1 1 1\" prop=\"true\" collide=\"false\" />";
             }
 
-            string line = "\t<joint "+tags+" pos=\"" + coord + "\" rot=\"" + rot + "\" type=\"" + joint.jointType + "\" rotstrength=\"" + joint.rotStrength + "\" rotspring=\"" + joint.rotSpring + "\" sound=\"" + joint.sound + "\" size=\"" + joint.size.ToString().Replace(",", ".") + "\" " + limits;
+            string line = "\t<joint "+tags+" pos=\"" + coord + "\" rot=\"" + rot + "\" type=\"" + joint.jointType + "\" rotstrength=\"" + joint.rotStrength.ToString().Replace(",", ".") + "\" rotspring=\"" + joint.rotSpring.ToString().Replace(",", ".") + "\" sound=\"" + joint.sound.ToString().ToLower() + "\" size=\"" + joint.size.ToString().Replace(",", ".") + "\" " + limits;
 
             if (inner.Length == 0)
             {
