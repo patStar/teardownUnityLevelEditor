@@ -17,15 +17,22 @@ public class Importer : MonoBehaviour
 
     public void Import(bool importOnlyValidAssets)
     {
-        MagicaRenderer renderer = new MagicaRenderer();        
-        if (importOnlyValidAssets)
+        try
         {
-            GameObject root = renderer.ImportMagicaVoxelFileAssets(importPath);
-            DestroyImmediate(root);
+            MagicaRenderer renderer = new MagicaRenderer();
+            if (importOnlyValidAssets)
+            {
+                GameObject root = renderer.ImportMagicaVoxelFileAssets(importPath);
+                DestroyImmediate(root);
+            }
+            else
+            {
+                renderer.ImportMagicaVoxelFile(importPath);
+            }
         }
-        else
+        catch(Exception e)
         {
-            renderer.ImportMagicaVoxelFile(importPath);
+            Debug.LogError(e);
         }
     }
 }

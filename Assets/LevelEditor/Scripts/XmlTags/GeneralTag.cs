@@ -9,7 +9,7 @@ public class GeneralTag : MonoBehaviour
     public GeneralTag parent;
     public List<GeneralTag> children = new List<GeneralTag>();
 
-    private void Update()
+    public void Update()
     {
         updateParent();
     }

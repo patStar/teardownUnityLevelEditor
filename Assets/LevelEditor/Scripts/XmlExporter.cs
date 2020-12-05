@@ -112,7 +112,7 @@ public class XmlExporter
             enrichXmlWithGeneralAttributes(xmlDoc, tag, node);
 
             XmlAttribute attribute = xmlDoc.CreateAttribute("file");
-            attribute.Value = tag.file;
+            attribute.Value = tag.file.Replace(XmlImporter.getLevelFolder(tag.file),"LEVEL");
             node.Attributes.Append(attribute);
         }
         else if (currentObject.GetComponent<Instance>() != null)
@@ -122,7 +122,7 @@ public class XmlExporter
             enrichXmlWithGeneralAttributes(xmlDoc, tag, node);
 
             XmlAttribute attribute = xmlDoc.CreateAttribute("file");
-            attribute.Value = tag.file;
+            attribute.Value = tag.file.Replace(XmlImporter.getLevelFolder(tag.file), "LEVEL");
             node.Attributes.Append(attribute);
         }
         else if (currentObject.GetComponent<SpawnPoint>() != null)
@@ -400,7 +400,7 @@ public class XmlExporter
             enrichXmlWithGameObjectAttributes(xmlDoc, tag, node);
 
             XmlAttribute attribute = xmlDoc.CreateAttribute("file");
-            attribute.Value = tag.file;
+            attribute.Value = tag.file.Replace(XmlImporter.getLevelFolder(tag.file), "LEVEL");
             node.Attributes.Append(attribute);
 
             if (!String.IsNullOrEmpty(tag.voxObject))
@@ -525,10 +525,14 @@ public class XmlExporter
             node.Attributes.Append(attribute);
         }
 
-        if (tag.rotation != null && !$"{tag.rotation.x} {tag.rotation.y} {tag.rotation.z}".Equals("0 0 0"))
+        Vector3 rotation = tag.gameObject.transform.localEulerAngles;
+        if (Math.Abs(rotation.x) < 0.001) rotation.x = 0;
+        if (Math.Abs(rotation.y) < 0.001) rotation.y = 0;
+        if (Math.Abs(rotation.z) < 0.001) rotation.z = 0;
+        if (rotation != null && !rotation.Equals(Vector3.zero))
         {
             XmlAttribute attribute = xmlDoc.CreateAttribute("rot");
-            attribute.Value = $"{tag.rotation.x} {-tag.rotation.y} {tag.rotation.z}".Replace(",", "."); ;
+            attribute.Value = $"{-rotation.x} {-rotation.y} {rotation.z}".Replace(",", "."); ;
             node.Attributes.Append(attribute);
         }
     }

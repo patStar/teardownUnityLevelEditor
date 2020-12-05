@@ -1,4 +1,5 @@
-﻿using System.IO.Pipes;
+﻿using System;
+using System.IO.Pipes;
 using UnityEngine;
 
 [SelectionBase]
@@ -21,32 +22,39 @@ public class Vox : GameObjectTag
 
     public void Reload()
     {
-        MagicaRenderer renderer = new MagicaRenderer();
-        if (voxObject.Equals(""))
+        try
         {
-            gameObject.name = "<vox " + teardownName + " " + file + ">";
-            GameObject importedObject = renderer.ImportMagicaVoxelFile(file);
-            Transform voxObject = importedObject.transform;
-            voxObject.parent = transform;
-            voxObject.transform.localPosition = Vector3.zero;
-            voxObject.transform.localRotation = Quaternion.identity;
-        }
-        else
-        {
-            gameObject.name  = "<vox " + teardownName + " " + file + " " + this.voxObject + ">";
-            GameObject importedObject = renderer.ImportMagicaVoxelFileObject(file, this.voxObject);
-            Transform voxObject = importedObject.transform;
-            if (importedObject.transform.childCount > 0)
+            MagicaRenderer renderer = new MagicaRenderer();
+            if (voxObject.Equals(""))
             {
-                voxObject = importedObject.transform.GetChild(0);
+                gameObject.name = "<vox " + teardownName + " " + file + ">";
+                GameObject importedObject = renderer.ImportMagicaVoxelFile(file);
+                Transform voxObject = importedObject.transform;
+                voxObject.parent = transform;
+                voxObject.transform.localPosition = Vector3.zero;
+                voxObject.transform.localRotation = Quaternion.identity;
             }
-            voxObject.transform.parent = transform;
-            voxObject.transform.localPosition = Vector3.zero;
-            voxObject.transform.localRotation = Quaternion.identity;
-            DestroyImmediate(importedObject);
-        }
+            else
+            {
+                gameObject.name = "<vox " + teardownName + " " + file + " " + this.voxObject + ">";
+                GameObject importedObject = renderer.ImportMagicaVoxelFileObject(file, this.voxObject);
+                Transform voxObject = importedObject.transform;
+                if (importedObject.transform.childCount > 0)
+                {
+                    voxObject = importedObject.transform.GetChild(0);
+                }
+                voxObject.transform.parent = transform;
+                voxObject.transform.localPosition = Vector3.zero;
+                voxObject.transform.localRotation = Quaternion.identity;
+                DestroyImmediate(importedObject);
+            }
 
-        setObjectNames(renderer.GetObjectNames(file));
+            setObjectNames(renderer.GetObjectNames(file));
+        }
+        catch(Exception e)
+        {
+            Debug.LogError(e);
+        }
     }
 
 }

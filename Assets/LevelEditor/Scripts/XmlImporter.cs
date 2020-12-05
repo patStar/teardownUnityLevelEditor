@@ -52,14 +52,29 @@ public class XmlImporter : MonoBehaviour
 
     float readFloat(XmlNode xmlNode, string attrName)
     {
-        return xmlNode.Attributes[attrName] != null ? float.Parse(xmlNode.Attributes[attrName].Value.Replace(".", ",")) : -1f;
+        return readFloat(xmlNode, attrName, -1f);
+    }
+    float readFloat(XmlNode xmlNode, string attrName, float defaultValue)
+    {
+        try
+        {
+            return xmlNode.Attributes[attrName] != null ? float.Parse(xmlNode.Attributes[attrName].Value.Replace(".", ",")) : defaultValue;
+        }
+        catch(Exception e)
+        {
+            throw new Exception("Could not parse float for "+attrName+". It was: "+ xmlNode.Attributes[attrName].Value, e);
+        }
     }
 
     Vector3 readVec3(XmlNode xmlNode, string attrName)
     {
         Vector3 result = xmlNode.Attributes[attrName] != null ? parsePosition(xmlNode.Attributes[attrName].Value) : Vector3.zero;
-        if (attrName.Equals("pos")) result.z = -result.z;
-        if (attrName.Equals("rot")) result.y = -result.y;
+        if (attrName.Equals("pos")) result.z = -result.z;        
+        if (attrName.Equals("rot"))
+        {
+            result.y = -result.y;
+            result.x = -result.x;
+        }
         return result;
     }
 
@@ -93,6 +108,7 @@ public class XmlImporter : MonoBehaviour
         attachGeneralProperties(tag, xmlNode);
         tag.position = readVec3(xmlNode, "pos");
         tag.rotation = readVec3(xmlNode, "rot");
+        tag.scale = readFloat(xmlNode, "scale",1 );
     }
 
     void attachGeneralProperties(GeneralTag tag, XmlNode xmlNode)
@@ -160,7 +176,10 @@ public class XmlImporter : MonoBehaviour
 
             go.transform.localRotation = Quaternion.Euler(tag.rotation);
             go.transform.localPosition = tag.position;
-
+            if (tag.scale > 0)
+            {
+                go.transform.localScale = go.transform.localScale * tag.scale;
+            }
             addToParent(parent, tag);
         }
         else if (xmlNode.Name == "wheel")
@@ -176,7 +195,10 @@ public class XmlImporter : MonoBehaviour
             tag.travel = readVec2(xmlNode, "travel");
             go.transform.localRotation = Quaternion.Euler(tag.rotation);
             go.transform.localPosition = tag.position;
-
+            if (tag.scale > 0)
+            {
+                go.transform.localScale = go.transform.localScale * tag.scale;
+            }
             addToParent(parent, tag);
         }
         else if (xmlNode.Name == "spawnpoint")
@@ -189,7 +211,10 @@ public class XmlImporter : MonoBehaviour
 
             go.transform.localRotation = Quaternion.Euler(tag.rotation);
             go.transform.localPosition = tag.position;
-
+            if (tag.scale > 0)
+            {
+                go.transform.localScale = go.transform.localScale * tag.scale;
+            }
             addToParent(parent, tag);
         }
         else if (xmlNode.Name == "location")
@@ -200,9 +225,12 @@ public class XmlImporter : MonoBehaviour
             attachTransformProperties(tag, xmlNode);
             go.name = "<" + xmlNode.Name + " " + tag.teardownName + ">";
 
-            go.transform.localRotation = Quaternion.Euler(tag.rotation);
+            go.transform.localRotation = Quaternion.Euler(tag.rotation);            
             go.transform.localPosition = tag.position;
-
+            if (tag.scale > 0)
+            {
+                go.transform.localScale = go.transform.localScale * tag.scale;
+            }
             addToParent(parent, tag);
         }
         else if (xmlNode.Name == "group")
@@ -215,7 +243,10 @@ public class XmlImporter : MonoBehaviour
 
             go.transform.localRotation = Quaternion.Euler(tag.rotation);
             go.transform.localPosition = tag.position;
-
+            if (tag.scale > 0)
+            {
+                go.transform.localScale = go.transform.localScale * tag.scale;
+            }
             addToParent(parent, tag);
         }
         else if (xmlNode.Name == "rope")
@@ -253,7 +284,10 @@ public class XmlImporter : MonoBehaviour
             tag.resolution = readVec2(xmlNode, "resolution");
             tag.bulge = readVec2(xmlNode, "bulge");
             tag.script = readString(xmlNode, "script");
-
+            if (tag.scale > 0)
+            {
+                go.transform.localScale = go.transform.localScale * tag.scale;
+            }
             addToParent(parent, tag);
         }
         else if (xmlNode.Name == "vox")
@@ -266,12 +300,15 @@ public class XmlImporter : MonoBehaviour
             tag.voxObject = readString(xmlNode, "object");
             tag.dynamic = readBool(xmlNode, "prop", false);
 
-            Debug.Log(tag.file);
-
             go.transform.localRotation = Quaternion.Euler(tag.rotation);
-            go.transform.localPosition = tag.position;
+            go.transform.localPosition = tag.position;           
 
             tag.Reload();
+
+            if (tag.scale > 0)
+            {
+                go.transform.localScale *= tag.scale;
+            }
 
             addToParent(parent, tag);
         }
@@ -291,6 +328,10 @@ public class XmlImporter : MonoBehaviour
 
             go.transform.localRotation = Quaternion.Euler(tag.rotation);
             go.transform.localPosition = tag.position;
+            if (tag.scale > 0)
+            {
+                go.transform.localScale = go.transform.localScale * tag.scale;
+            }
 
             addToParent(parent, tag);
         }
@@ -313,7 +354,9 @@ public class XmlImporter : MonoBehaviour
             cube.transform.localRotation = Quaternion.identity;
             cube.GetComponent<MeshRenderer>().sharedMaterial = new Material(Shader.Find("Standard"));
             go.transform.localScale = tag.size/10;
-            
+            if (tag.scale > 0) {
+                go.transform.localScale = go.transform.localScale * tag.scale;
+            }
 
             addToParent(parent, tag);
         }
@@ -328,6 +371,10 @@ public class XmlImporter : MonoBehaviour
             tag.dynamic = readBool(xmlNode, "dynamic", false);
             go.transform.localRotation = Quaternion.Euler(tag.rotation);
             go.transform.localPosition = tag.position;
+            if (tag.scale > 0)
+            {
+                go.transform.localScale = go.transform.localScale * tag.scale;
+            }
 
             addToParent(parent, tag);
         }
@@ -342,7 +389,10 @@ public class XmlImporter : MonoBehaviour
 
             go.transform.localRotation = Quaternion.Euler(tag.rotation);
             go.transform.localPosition = tag.position;
-
+            if (tag.scale > 0)
+            {
+                go.transform.localScale = go.transform.localScale * tag.scale;
+            }
             addToParent(parent, tag);
 
         }
@@ -365,6 +415,7 @@ public class XmlImporter : MonoBehaviour
         else if (xmlNode.Name == "scene")
         {
             Scene tag = go.AddComponent<Scene>();
+
             go.transform.parent = parent.transform;
             attachGeneralProperties(tag, xmlNode);
 
@@ -422,7 +473,10 @@ public class XmlImporter : MonoBehaviour
             }
             go.transform.localRotation = Quaternion.Euler(tag.rotation);
             go.transform.localPosition = tag.position;
-
+            if (tag.scale > 0)
+            {
+                go.transform.localScale = go.transform.localScale * tag.scale;
+            }
             addToParent(parent, tag);
 
         }
@@ -466,7 +520,10 @@ public class XmlImporter : MonoBehaviour
 
             go.transform.localRotation = Quaternion.Euler(tag.rotation);
             go.transform.localPosition = tag.position;
-
+            if (tag.scale > 0)
+            {
+                go.transform.localScale = go.transform.localScale * tag.scale;
+            }
             addToParent(parent, tag);
         }
 
@@ -478,7 +535,7 @@ public class XmlImporter : MonoBehaviour
         return go;
     }
 
-    private static string getLevelFolder(string fileName)
+    public static string getLevelFolder(string fileName)
     {
         string[] folders = Directory.GetParent(fileName).FullName.Split(new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.None);
         List<string> levelFolderParts = new List<string>();
@@ -514,7 +571,18 @@ public class XmlImporter : MonoBehaviour
     {
         if (pos == null) return Vector3.zero;
         string[] posData = pos.Replace(".", ",").Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-        return new Vector3(float.Parse(posData[0]), float.Parse(posData[1]), float.Parse(posData[2]));
+        if (posData.Length == 1)
+        {
+            return new Vector3(float.Parse(posData[0]), float.Parse(posData[0]), float.Parse(posData[0]));
+        }
+        else if (posData.Length == 3)
+        {
+            return new Vector3(float.Parse(posData[0]), float.Parse(posData[1]), float.Parse(posData[2]));
+        }
+        else
+        {
+            throw new Exception("invalid vector 3 argument found: "+pos);
+        }
     }
 
     Vector2 parseVec2(string pos)

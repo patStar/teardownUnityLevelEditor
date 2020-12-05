@@ -153,7 +153,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 827c48618dc9621488fe7ef5b5486330, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fileName: G:/Steam/SteamApps/common/Teardown/create/vehicle.xml
+  fileName: G:/Steam/SteamApps/common/Teardown/create/custom20.xml
 --- !u!4 &2126881870
 Transform:
   m_ObjectHideFlags: 0
