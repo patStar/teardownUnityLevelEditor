@@ -137,6 +137,12 @@ public class XmlExporter
             node = xmlDoc.CreateNode(XmlNodeType.Element, "location", "");
             enrichXmlWithTransformAttributes(xmlDoc, tag, node);
         }
+        else if (currentObject.GetComponent<Group>() != null)
+        {
+            Group tag = (Group)currentObject.GetComponent<Group>();
+            node = xmlDoc.CreateNode(XmlNodeType.Element, "group", "");
+            enrichXmlWithTransformAttributes(xmlDoc, tag, node);
+        }
         else if (currentObject.GetComponent<Water>() != null)
         {
             Water tag = (Water)currentObject.GetComponent<Water>();

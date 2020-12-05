@@ -205,6 +205,19 @@ public class XmlImporter : MonoBehaviour
 
             addToParent(parent, tag);
         }
+        else if (xmlNode.Name == "group")
+        {
+            Group tag = go.AddComponent<Group>();
+            go.transform.parent = parent.transform;
+
+            attachTransformProperties(tag, xmlNode);
+            go.name = "<" + xmlNode.Name + " " + tag.teardownName + ">";
+
+            go.transform.localRotation = Quaternion.Euler(tag.rotation);
+            go.transform.localPosition = tag.position;
+
+            addToParent(parent, tag);
+        }
         else if (xmlNode.Name == "rope")
         {
             Rope tag = go.AddComponent<Rope>();
