@@ -535,6 +535,13 @@ public class XmlExporter
             attribute.Value = $"{-rotation.x} {-rotation.y} {rotation.z}".Replace(",", "."); ;
             node.Attributes.Append(attribute);
         }
+
+        if(tag.scale != 1)
+        {
+            XmlAttribute attribute = xmlDoc.CreateAttribute("scale");
+            attribute.Value = tag.scale.ToString().Replace(",", ".");
+            node.Attributes.Append(attribute);
+        }
     }
 
     private static void enrichXmlWithGeneralAttributes(XmlDocument xmlDoc, GeneralTag tag, XmlNode node)
