@@ -14,7 +14,7 @@ public class XmlImporter : MonoBehaviour
     public string fileName;    
 
     [ContextMenu("Import")]
-    void import()
+    public void import()
     {
         readXML(fileName);
     }
@@ -249,37 +249,16 @@ public class XmlImporter : MonoBehaviour
             go.transform.parent = parent.transform;
 
             attachGameObjectProperties(tag, xmlNode);
-            tag.file = readString(xmlNode, "file");
+            tag.file = readString(xmlNode, "file").Replace("LEVEL", getLevelFolder(fileName)); ;
             tag.voxObject = readString(xmlNode, "object");
             tag.dynamic = readBool(xmlNode, "prop", false);
+
+            Debug.Log(tag.file);
 
             go.transform.localRotation = Quaternion.Euler(tag.rotation);
             go.transform.localPosition = tag.position;
 
-            MagicaRenderer renderer = new MagicaRenderer();
-            if (tag.voxObject.Equals(""))
-            {
-                go.name = "<" + xmlNode.Name + " " + tag.teardownName + " " + tag.file + ">";
-                GameObject importedObject = renderer.ImportMagicaVoxelFile(tag.file.Replace("LEVEL", getLevelFolder(fileName)));
-                Transform voxObject = importedObject.transform;
-                voxObject.parent = go.transform;
-                voxObject.transform.localPosition = Vector3.zero;
-                voxObject.transform.localRotation = Quaternion.identity;
-            }
-            else
-            {
-                go.name = "<" + xmlNode.Name + " " + tag.teardownName + " " + tag.file + " " + tag.voxObject + ">";
-                GameObject importedObject = renderer.ImportMagicaVoxelFileObject(tag.file.Replace("LEVEL", getLevelFolder(fileName)), tag.voxObject);
-                Transform voxObject = importedObject.transform;
-                if (importedObject.transform.childCount > 0)
-                {
-                    voxObject = importedObject.transform.GetChild(0);
-                }
-                voxObject.transform.parent = go.transform;
-                voxObject.transform.localPosition = Vector3.zero;
-                voxObject.transform.localRotation = Quaternion.identity;
-                DestroyImmediate(importedObject);
-            }
+            tag.Reload();
 
             addToParent(parent, tag);
         }

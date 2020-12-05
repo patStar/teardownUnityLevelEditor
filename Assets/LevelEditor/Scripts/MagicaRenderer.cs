@@ -135,11 +135,11 @@ public class MagicaRenderer
         return matrix;
     }
 
-    public GameObject forLater(string path, string name)
+    public string[] GetObjectNames(string path)
     {
         Chunk mainChunk = MagicaVoxelReader.ReadMagicaChunks(path);
 
-        Dictionary<string, TransformNodeChunk> transformNodes = new Dictionary<string, TransformNodeChunk>();
+        HashSet<string> names = new HashSet<string>();
 
         for (int i = 0; i < mainChunk.children.Count; i++)
         {
@@ -149,14 +149,12 @@ public class MagicaRenderer
                 TransformNodeChunk transformNodeChunk = (TransformNodeChunk) chunk;
                 if (transformNodeChunk.attributes.Keys.Contains("_name"))
                 {
-                    transformNodes.Add(transformNodeChunk.attributes["_name"], transformNodeChunk);
+                    names.Add(transformNodeChunk.attributes["_name"]);
                 }
             }
         }
 
-
-
-        return null;
+        return names.ToArray<string>();
     }
 
     public GameObject ImportMagicaVoxelFileObject(string path, string objectName)
