@@ -15,10 +15,17 @@ public class Importer : MonoBehaviour
     [Tooltip("Import a vox file from here")]
     public string importPath;
 
-    [ContextMenu("Import Magica File")]
-    public void Import()
+    public void Import(bool importOnlyValidAssets)
     {
-        MagicaRenderer renderer = new MagicaRenderer();
-        renderer.ImportMagicaVoxelFile(importPath);
+        MagicaRenderer renderer = new MagicaRenderer();        
+        if (importOnlyValidAssets)
+        {
+            GameObject root = renderer.ImportMagicaVoxelFileAssets(importPath);
+            DestroyImmediate(root);
+        }
+        else
+        {
+            renderer.ImportMagicaVoxelFile(importPath);
+        }
     }
 }

@@ -1,17 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.SocialPlatforms;
 using UnityEngine.Timeline;
+using Debug = UnityEngine.Debug;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
 
 public class MagicaRenderer
 {    
-    public static float size = 1;
+    public static float size = 1;    
 
     public static Vector3[] getRotationMatrix(TransformNodeChunk transformNodeChunk)
     {
@@ -131,14 +135,271 @@ public class MagicaRenderer
         return matrix;
     }
 
-    public GameObject ImportMagicaVoxelFile(string path)
-    {        
+    public GameObject forLater(string path, string name)
+    {
+        Chunk mainChunk = MagicaVoxelReader.ReadMagicaChunks(path);
+
+        Dictionary<string, TransformNodeChunk> transformNodes = new Dictionary<string, TransformNodeChunk>();
+
+        for (int i = 0; i < mainChunk.children.Count; i++)
+        {
+            Chunk chunk = mainChunk.children[i];
+            if (chunk is TransformNodeChunk)
+            {
+                TransformNodeChunk transformNodeChunk = (TransformNodeChunk) chunk;
+                if (transformNodeChunk.attributes.Keys.Contains("_name"))
+                {
+                    transformNodes.Add(transformNodeChunk.attributes["_name"], transformNodeChunk);
+                }
+            }
+        }
+
+
+
+        return null;
+    }
+
+    public GameObject ImportMagicaVoxelFileObject(string path, string objectName)
+    {
+        Material vertexMaterial = Resources.Load("VertexShading", typeof(Material)) as Material;
+
         GameObject levelGo = new GameObject(Path.GetFileName(path));
         levelGo.AddComponent<TeardownProperties>();
         MagicaImportedFile magicaImportedFile = levelGo.AddComponent<MagicaImportedFile>();
         magicaImportedFile.voxFile = Path.GetFileName(path);
-       
 
+        Chunk mainChunk = MagicaVoxelReader.ReadMagicaChunks(path);
+        List<Material> colorMaterials = ImportColors(mainChunk);
+
+        for (int i = 0; i < mainChunk.children.Count; i++)
+        {
+            Chunk chunk = mainChunk.children[i];
+            if (chunk is VoxelModelChunk)
+            {
+                VoxelModelChunk voxelChunk = (VoxelModelChunk)chunk;
+
+                foreach (ShapeNodeChunk shape in voxelChunk.shapes)
+                {
+                    if (!shape.transform.attributes.Keys.Contains("_name") || !shape.transform.attributes["_name"].Equals(objectName))
+                    {
+                        continue;
+                    }
+                                    
+                    MeshAndColors meshAndColors = createMesh(voxelChunk, shape);
+                    Color[] colors = new Color[meshAndColors.colors.Count];
+                    for (int c = 0; c < meshAndColors.colors.Count; c++)
+                    {
+                        colors[c] = colorMaterials[meshAndColors.colors[c] - 1].color;
+                    }
+                    meshAndColors.mesh.colors = colors;
+
+                    TransformNodeChunk transformNodeChunk = shape.transform;
+                    GameObject go = new GameObject();
+                    ObjectAttributes script = go.AddComponent<ObjectAttributes>();
+                    MeshRenderer renderer = go.AddComponent<MeshRenderer>();
+                    renderer.material = vertexMaterial;
+                    MeshFilter filter = go.AddComponent<MeshFilter>();
+                    filter.mesh = meshAndColors.mesh;
+
+                    Vector3 shift = Vector3.zero; //new Vector3(script.singleCenter.x, 0, script.singleCenter.y);
+                    while (transformNodeChunk != null)
+                    {
+                        if (transformNodeChunk.attributes.Count > 0 && transformNodeChunk.attributes.ContainsKey("_name"))
+                        {
+                            string name = transformNodeChunk.attributes["_name"];
+                            script.names.Add(name);
+                        }
+
+                        if (transformNodeChunk.frameAttributes[0].ContainsKey("_r"))
+                        {
+                            script.rotations.Add(transformNodeChunk.frameAttributes[0]["_r"]);
+                        }
+
+                        Vector3[] rotationMatrix = getRotationMatrix(transformNodeChunk);
+                        script.rotationMatrices.Add(rotationMatrix);
+
+                        if (transformNodeChunk.frameAttributes[0].ContainsKey("_t"))
+                        {
+                            string[] coords = transformNodeChunk.frameAttributes[0]["_t"].Split(' ');
+                            Vector3 currentShift = new Vector3(float.Parse(coords[0]) / 10f, float.Parse(coords[2]) / 10f, float.Parse(coords[1]) / 10f); ;
+                            script.magicaTransitions.Add(currentShift);
+                            shift += currentShift;
+                        }
+                        if (transformNodeChunk.group != null && transformNodeChunk.group.transform != null)
+                        {
+                            transformNodeChunk = transformNodeChunk.group.transform;
+                        }
+                        else
+                        {
+                            transformNodeChunk = null;
+                        }
+                    }
+
+                    Vector3 ve = rotateVector(new Vector3(voxelChunk.sizeChunk.sizeX, voxelChunk.sizeChunk.sizeY, voxelChunk.sizeChunk.sizeZ), shape.transform);
+
+                    script.magicaTotalSize = new Vector3(Math.Abs(ve.x), Math.Abs(ve.z), Math.Abs(ve.y));
+
+                    script.bottomCenterOfVoxelMass = shape.singleCenter / 10f;
+
+                    script.centerOfMagicaMass = new Vector3((float)Math.Floor((double)(Math.Abs(ve.x) / 2f)) / 10f, (float)Math.Floor((double)(Math.Abs(ve.z) / 2f)) / 10f, (float)Math.Floor((double)(Math.Abs(ve.y) / 2f)) / 10f);
+                    script.parentVoxFile = Path.GetFileName(path);
+
+                    shift += new Vector3(script.bottomCenterOfVoxelMass.x - script.centerOfMagicaMass.x, script.bottomCenterOfVoxelMass.y - script.centerOfMagicaMass.y, script.bottomCenterOfVoxelMass.z - script.centerOfMagicaMass.z);
+
+                    go.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+                    go.transform.position = shift;
+
+                    go.transform.parent = levelGo.transform;
+
+                    if (script.names.Count > 0)
+                    {
+                        go.name = script.names[0];
+                    }
+                }
+            }
+        }
+
+        return levelGo;
+    }
+
+    public GameObject ImportMagicaVoxelFile(string path)
+    {
+        Material vertexMaterial = Resources.Load("VertexShading", typeof(Material)) as Material;
+
+        GameObject levelGo = new GameObject(Path.GetFileName(path));
+        levelGo.AddComponent<TeardownProperties>();
+        MagicaImportedFile magicaImportedFile = levelGo.AddComponent<MagicaImportedFile>();
+        magicaImportedFile.voxFile = Path.GetFileName(path);
+
+        List<GameObject> gameObjects = new List<GameObject>();
+        Dictionary<string, GameObject> namedGameObjects = new Dictionary<string, GameObject>();
+
+        Chunk mainChunk = MagicaVoxelReader.ReadMagicaChunks(path);
+        List<Material> colorMaterials = ImportColors(mainChunk);
+        List<string> names = new List<string>();
+        List<string> doubleNames = new List<string>();        
+
+        for (int i = 0; i < mainChunk.children.Count; i++)
+        {
+            Chunk chunk = mainChunk.children[i];
+            if (chunk is VoxelModelChunk)
+            {
+                VoxelModelChunk voxelChunk = (VoxelModelChunk)chunk;
+
+                foreach (ShapeNodeChunk shape in voxelChunk.shapes)
+                {
+                    MeshAndColors meshAndColors = createMesh(voxelChunk, shape);
+                    Color[] colors = new Color[meshAndColors.colors.Count];
+                    for(int c=0; c<meshAndColors.colors.Count; c++)
+                    {
+                        colors[c] = colorMaterials[meshAndColors.colors[c]-1].color;
+                    }
+                    meshAndColors.mesh.colors = colors;
+
+                    TransformNodeChunk transformNodeChunk = shape.transform;
+                    GameObject go = new GameObject();
+                    gameObjects.Add(go);
+                    ObjectAttributes script = go.AddComponent<ObjectAttributes>();
+                    MeshRenderer renderer = go.AddComponent<MeshRenderer>();
+                    renderer.material = vertexMaterial;
+                    MeshFilter filter = go.AddComponent<MeshFilter>();
+                    filter.mesh = meshAndColors.mesh;
+
+                    Vector3 shift = Vector3.zero; //new Vector3(script.singleCenter.x, 0, script.singleCenter.y);
+                    while (transformNodeChunk != null)
+                    {
+                        if (transformNodeChunk.attributes.Count > 0 && transformNodeChunk.attributes.ContainsKey("_name"))
+                        {
+                            string name = transformNodeChunk.attributes["_name"];
+                            script.names.Add(name);
+
+                            if (names.Contains(name))
+                            {
+                                if (!doubleNames.Contains(name))
+                                {
+                                    doubleNames.Add(name);
+                                }
+                            }
+                            else
+                            {
+                                names.Add(name);
+                                namedGameObjects.Add(name, go);
+                            }
+                        }
+
+                        if (transformNodeChunk.frameAttributes[0].ContainsKey("_r"))
+                        {
+                            script.rotations.Add(transformNodeChunk.frameAttributes[0]["_r"]);
+                        }
+
+                        Vector3[] rotationMatrix = getRotationMatrix(transformNodeChunk);
+                        script.rotationMatrices.Add(rotationMatrix);
+
+                        if (transformNodeChunk.frameAttributes[0].ContainsKey("_t"))
+                        {
+                            string[] coords = transformNodeChunk.frameAttributes[0]["_t"].Split(' ');
+                            Vector3 currentShift = new Vector3(float.Parse(coords[0]) / 10f, float.Parse(coords[2]) / 10f, float.Parse(coords[1]) / 10f); ;
+                            script.magicaTransitions.Add(currentShift);
+                            shift += currentShift;
+                        }
+                        if (transformNodeChunk.group != null && transformNodeChunk.group.transform != null)
+                        {
+                            transformNodeChunk = transformNodeChunk.group.transform;
+                        }
+                        else
+                        {
+                            transformNodeChunk = null;
+                        }
+                    }
+
+                    Vector3 ve = rotateVector(new Vector3(voxelChunk.sizeChunk.sizeX, voxelChunk.sizeChunk.sizeY, voxelChunk.sizeChunk.sizeZ), shape.transform);
+
+                    script.magicaTotalSize = new Vector3(Math.Abs(ve.x), Math.Abs(ve.z), Math.Abs(ve.y));
+
+                    script.bottomCenterOfVoxelMass = shape.singleCenter / 10f;
+
+                    script.centerOfMagicaMass = new Vector3((float)Math.Floor((double)(Math.Abs(ve.x) / 2f)) / 10f, (float)Math.Floor((double)(Math.Abs(ve.z) / 2f)) / 10f, (float)Math.Floor((double)(Math.Abs(ve.y) / 2f)) / 10f);
+                    script.parentVoxFile = Path.GetFileName(path);
+                    //shift -= script.trans;
+                    shift += new Vector3(script.bottomCenterOfVoxelMass.x - script.centerOfMagicaMass.x, script.bottomCenterOfVoxelMass.y - script.centerOfMagicaMass.y, script.bottomCenterOfVoxelMass.z - script.centerOfMagicaMass.z);
+                    //shift += (script.bottomCenterOfVoxelMass - script.centerOfMagicaMass);
+
+                    go.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+                    go.transform.position = shift;
+
+                    go.transform.parent = levelGo.transform;
+
+                    if (script.names.Count > 0)
+                    {
+                        go.name = script.names[0];
+                    }
+                }
+            }
+        }
+
+        // remove double named objects since we cannot insert them properly
+        foreach (string name in doubleNames)
+        {
+            namedGameObjects.Remove(name);
+        }
+
+        foreach (GameObject g in gameObjects)
+        {
+            if (namedGameObjects.Values.Contains(g))
+            {
+                TeardownProperties teardownProperties = g.AddComponent<TeardownProperties>();
+            }
+        }
+
+        return levelGo;
+    }
+
+    public GameObject ImportMagicaVoxelFileAssets(string path)
+    {
+        GameObject levelGo = new GameObject(Path.GetFileName(path));
+        
+        string fileName = Path.GetFileName(path);
+       
         List<GameObject> gameObjects = new List<GameObject>();
         Dictionary<string, GameObject> namedGameObjects = new Dictionary<string, GameObject>();        
 
@@ -147,23 +408,56 @@ public class MagicaRenderer
         List<string> names = new List<string>();
         List<string> doubleNames = new List<string>();
 
+        string localPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine("Assets", "ImportedPrefabs", fileName));
+        string materialFolder = Path.Combine("Assets", "ImportedPrefabs", fileName, "Materials");
+        string meshFolder = Path.Combine("Assets", "ImportedPrefabs", fileName, "Meshes");
+        if (!AssetDatabase.IsValidFolder(localPath))
+        {
+            AssetDatabase.CreateFolder(Path.Combine("Assets", "ImportedPrefabs"), fileName);
+        }
+        if (!AssetDatabase.IsValidFolder(materialFolder))
+        {
+            AssetDatabase.CreateFolder(localPath, "Materials");
+        }
+        if (!AssetDatabase.IsValidFolder(meshFolder))
+        {
+            AssetDatabase.CreateFolder(localPath, "Meshes");
+        }
+
+        for (int m = 0; m < colorMaterials.Count; m++)
+        {
+            AssetDatabase.CreateAsset(colorMaterials[m], Path.Combine(materialFolder , "Color_" + m + ".mat"));
+        }
+
         for (int i = 0; i < mainChunk.children.Count; i++)
         {
             Chunk chunk = mainChunk.children[i];
             if (chunk is VoxelModelChunk)
             {
                 VoxelModelChunk voxelChunk = (VoxelModelChunk)chunk;
-                List<Material> materials = new List<Material>();
-
+                
                 foreach (ShapeNodeChunk shape in voxelChunk.shapes)
-                {
+                {                               
+                    TransformNodeChunk transformNodeChunk = shape.transform;
+
+                    bool isPotentialAsset = false;
+                    while (transformNodeChunk != null)
+                    {
+                        if (transformNodeChunk.attributes.Count > 0 && transformNodeChunk.attributes.ContainsKey("_name"))
+                        {
+                            isPotentialAsset = true;
+                            break;
+                        }
+                    }
+                    if (!isPotentialAsset) continue;
+
                     MeshAndColors meshAndColors = createMesh(voxelChunk, shape);
+                    List<Material> materials = new List<Material>();
                     foreach (int color in meshAndColors.colors)
                     {
                         materials.Add(colorMaterials[color - 1]);
                     }
 
-                    TransformNodeChunk transformNodeChunk = shape.transform;
                     GameObject go = new GameObject();
                     gameObjects.Add(go);
                     ObjectAttributes script = go.AddComponent<ObjectAttributes>();
@@ -232,15 +526,10 @@ public class MagicaRenderer
 
                     go.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
                     go.transform.position = shift;
-                    
-                    go.transform.parent = levelGo.transform;                                                                                        
-
-                    if (script.names.Count > 0)
-                    {
-                        go.name = script.names[0];
-                    }                    
+                    go.name = script.names[0];
+                    go.transform.parent = levelGo.transform;
                 }
-            }            
+            }
         }
     
         // remove double named objects since we cannot insert them properly
@@ -248,13 +537,17 @@ public class MagicaRenderer
             namedGameObjects.Remove(name);
         }
 
-        foreach(GameObject g in gameObjects)
+        foreach(GameObject g in namedGameObjects.Values)
         {
-            if (namedGameObjects.Values.Contains(g))
-            {
-                TeardownProperties teardownProperties = g.AddComponent<TeardownProperties>();
-            }
+            TeardownProperties teardownProperties = g.AddComponent<TeardownProperties>();
+
+            // Create the new Prefab.                        
+            AssetDatabase.CreateAsset(g.GetComponent<MeshFilter>().sharedMesh, Path.Combine(meshFolder, g.name.Replace(" ", "_") + ".mesh"));
+            AssetDatabase.SaveAssets();
+            PrefabUtility.SaveAsPrefabAssetAndConnect(g, Path.Combine("Assets", "ImportedPrefabs", fileName, g.name.Replace(" ", "_") + ".prefab"), InteractionMode.UserAction);                       
         }
+
+        PrefabUtility.SaveAsPrefabAssetAndConnect(levelGo, Path.Combine("Assets", "ImportedPrefabs", fileName, fileName + ".prefab"), InteractionMode.UserAction);
 
         return levelGo;
     }
@@ -281,13 +574,13 @@ public class MagicaRenderer
         return colorMaterials;
     }
 
-    class MeshAndColors
+    public class MeshAndColors
     {
         public Mesh mesh;
         public List<int> colors;
     }
-    
-    class RenderVoxel
+
+    public class RenderVoxel
     {
         public static int DOWN = 1;
         public static int UP = 2;
@@ -330,17 +623,17 @@ public class MagicaRenderer
         return current;
     }
 
-    private MeshAndColors createMesh(VoxelModelChunk voxelChunk, ShapeNodeChunk shape)
-    {        
+    public MeshAndColors createMesh(VoxelModelChunk voxelChunk, ShapeNodeChunk shape)
+    {
         Vector3 ve = rotateVector(new Vector3(voxelChunk.sizeChunk.sizeX, voxelChunk.sizeChunk.sizeY, voxelChunk.sizeChunk.sizeZ), shape.transform);
-        
+
         int sizeX = (int)Math.Abs(ve.x);
         int sizeY = (int)Math.Abs(ve.y);
         int sizeZ = (int)Math.Abs(ve.z);
 
         // WTF? Dont drink and code!!!
-        Vector3 correction = new Vector3((ve.x < 0) ? Math.Abs(ve.x)-1 : 0, (ve.y < 0) ? Math.Abs(ve.y) - 1 : 0, (ve.z < 0) ? Math.Abs(ve.z) - 1 : 0);        
-         
+        Vector3 correction = new Vector3((ve.x < 0) ? Math.Abs(ve.x) - 1 : 0, (ve.y < 0) ? Math.Abs(ve.y) - 1 : 0, (ve.z < 0) ? Math.Abs(ve.z) - 1 : 0);
+
         RenderVoxel[,,] voxelArray = new RenderVoxel[sizeX, sizeY, sizeZ];
 
         float maxX = 0;
@@ -361,77 +654,89 @@ public class MagicaRenderer
             if (rotVec.z > maxZ) maxZ = rotVec.z;
         }
 
-        shape.singleCenter = new Vector3((float) Math.Ceiling(minX + (maxX - minX)/2f), minZ, (float)Math.Ceiling(minY + (maxY - minY) / 2f));                   
+        shape.singleCenter = new Vector3((float)Math.Ceiling(minX + (maxX - minX) / 2f), minZ, (float)Math.Ceiling(minY + (maxY - minY) / 2f));
+        Vector3 shifts = shape.singleCenter;
+      
+        MeshAndColors meshAndColors = createMeshFromVoxelArray(voxelArray, shifts);
+        
+        return meshAndColors;
+    }
 
+    public MeshAndColors createMeshFromVoxelArray(RenderVoxel[,,] voxelArray, Vector3 shifts)
+    {
         // gravity first              
-        for (int z=0; z< sizeZ; z++)
+        for (int z = 0; z < voxelArray.GetLength(2); z++)
         {
-            for (int y=0; y < sizeY; y++)
+            for (int y = 0; y < voxelArray.GetLength(1); y++)
             {
-                for (int x=0; x < sizeX; x++)
-                {                    
+                for (int x = 0; x < voxelArray.GetLength(0); x++)
+                {
                     if (voxelArray[x, y, z] == null)
                     {
                         continue;
-                    }                    
+                    }
 
-                    if (x > 0 && voxelArray[x-1, y, z] != null)
+                    if (x > 0 && voxelArray[x - 1, y, z] != null)
                     {
                         voxelArray[x, y, z].sides ^= RenderVoxel.LEFT;
-                        voxelArray[x-1, y, z].sides ^= RenderVoxel.RIGHT;
+                        voxelArray[x - 1, y, z].sides ^= RenderVoxel.RIGHT;
                     }
-                    if (y > 0 && voxelArray[x, y-1, z] != null)
+                    if (y > 0 && voxelArray[x, y - 1, z] != null)
                     {
                         voxelArray[x, y, z].sides ^= RenderVoxel.BACK;
-                        voxelArray[x, y-1, z].sides ^= RenderVoxel.FRONT;
+                        voxelArray[x, y - 1, z].sides ^= RenderVoxel.FRONT;
                     }
-                    if (z > 0 && voxelArray[x, y , z-1] != null)
+                    if (z > 0 && voxelArray[x, y, z - 1] != null)
                     {
                         voxelArray[x, y, z].sides ^= RenderVoxel.DOWN;
-                        voxelArray[x, y, z-1].sides ^= RenderVoxel.UP;
+                        voxelArray[x, y, z - 1].sides ^= RenderVoxel.UP;
                     }
                 }
             }
         }
 
-        List<Vector3> vertices = new List<Vector3>();
-        List<Vector2> uvs = new List<Vector2>();
-        List<int>[] trianglesByColor = new List<int>[256];
-        List<int> colorOrder = new List<int>();        
 
-        for (int _z = 0; _z < sizeZ; _z++)
+        List<int> colors;
+        Mesh mesh;
+
+        List<Vector3> vertices = new List<Vector3>();
+        List<int> triangles = new List<int>();
+        List<int> colorOrder = new List<int>();
+        colors = new List<int>();
+        for (int _z = 0; _z < voxelArray.GetLength(2); _z++)
         {
-            for (int _y = 0; _y < sizeY; _y++)
+            for (int _y = 0; _y < voxelArray.GetLength(1); _y++)
             {
-                for (int _x = 0; _x < sizeX; _x++)
-                {                    
+                for (int _x = 0; _x < voxelArray.GetLength(0); _x++)
+                {
                     RenderVoxel renderVoxel = voxelArray[_x, _y, _z];
 
-                    float x = _x - shape.singleCenter.x;
-                    float y = _y - shape.singleCenter.z;
-                    float z = _z - shape.singleCenter.y;
-
-                    if (renderVoxel == null)
+                    if (renderVoxel == null || renderVoxel.sides == 0)
                     {
                         continue;
                     }
 
+                    float x = _x - shifts.x;
+                    float y = _y - shifts.z;
+                    float z = _z - shifts.y;
+
                     if (!colorOrder.Contains(renderVoxel.color))
                     {
                         colorOrder.Add(renderVoxel.color);
-                        trianglesByColor[renderVoxel.color] = new List<int>();
                     }
-
-                    List<int> triangles = trianglesByColor[renderVoxel.color];
 
                     if ((renderVoxel.sides & RenderVoxel.DOWN) != 0)
                     {
                         int startIndex = vertices.Count;
 
                         vertices.Add(new Vector3(x * size, z * size, y * size));
-                        vertices.Add(new Vector3((x+1) * size, z * size, y * size));
-                        vertices.Add(new Vector3(x * size, z * size, (y+1) * size));
-                        vertices.Add(new Vector3((x+1) * size, z * size, (y + 1) * size));
+                        vertices.Add(new Vector3((x + 1) * size, z * size, y * size));
+                        vertices.Add(new Vector3(x * size, z * size, (y + 1) * size));
+                        vertices.Add(new Vector3((x + 1) * size, z * size, (y + 1) * size));
+                        colors.Add(renderVoxel.color);
+                        colors.Add(renderVoxel.color);
+                        colors.Add(renderVoxel.color);
+                        colors.Add(renderVoxel.color);
 
                         triangles.Add(startIndex);
                         triangles.Add(startIndex + 1);
@@ -439,21 +744,20 @@ public class MagicaRenderer
                         triangles.Add(startIndex + 1);
                         triangles.Add(startIndex + 3);
                         triangles.Add(startIndex + 2);
-
-                        uvs.Add(new Vector2(0, 0));
-                        uvs.Add(new Vector2(1, 0));
-                        uvs.Add(new Vector2(1, 1));
-                        uvs.Add(new Vector2(0, 1));
 
                     }
                     if ((renderVoxel.sides & RenderVoxel.UP) != 0)
                     {
                         int startIndex = vertices.Count;
 
-                        vertices.Add(new Vector3(x * size, (z+1) * size, y * size));
-                        vertices.Add(new Vector3((x + 1) * size, (z+1) * size, y * size));
-                        vertices.Add(new Vector3(x * size, (z+1) * size, (y + 1) * size));
-                        vertices.Add(new Vector3((x + 1) * size, (z+1) * size, (y + 1) * size));
+                        vertices.Add(new Vector3(x * size, (z + 1) * size, y * size));
+                        vertices.Add(new Vector3((x + 1) * size, (z + 1) * size, y * size));
+                        vertices.Add(new Vector3(x * size, (z + 1) * size, (y + 1) * size));
+                        vertices.Add(new Vector3((x + 1) * size, (z + 1) * size, (y + 1) * size));
+                        colors.Add(renderVoxel.color);
+                        colors.Add(renderVoxel.color);
+                        colors.Add(renderVoxel.color);
+                        colors.Add(renderVoxel.color);
 
                         triangles.Add(startIndex);
                         triangles.Add(startIndex + 2);
@@ -461,11 +765,6 @@ public class MagicaRenderer
                         triangles.Add(startIndex + 2);
                         triangles.Add(startIndex + 3);
                         triangles.Add(startIndex + 1);
-
-                        uvs.Add(new Vector2(0, 0));
-                        uvs.Add(new Vector2(1, 0));
-                        uvs.Add(new Vector2(1, 1));
-                        uvs.Add(new Vector2(0, 1));
                     }
                     if ((renderVoxel.sides & RenderVoxel.LEFT) != 0)
                     {
@@ -475,6 +774,10 @@ public class MagicaRenderer
                         vertices.Add(new Vector3(x * size, z * size, (y + 1) * size));
                         vertices.Add(new Vector3(x * size, (z + 1) * size, (y + 1) * size));
                         vertices.Add(new Vector3(x * size, (z + 1) * size, y * size));
+                        colors.Add(renderVoxel.color);
+                        colors.Add(renderVoxel.color);
+                        colors.Add(renderVoxel.color);
+                        colors.Add(renderVoxel.color);
 
                         triangles.Add(startIndex);
                         triangles.Add(startIndex + 1);
@@ -482,11 +785,6 @@ public class MagicaRenderer
                         triangles.Add(startIndex + 2);
                         triangles.Add(startIndex + 3);
                         triangles.Add(startIndex);
-
-                        uvs.Add(new Vector2(0, 0));
-                        uvs.Add(new Vector2(1, 0));
-                        uvs.Add(new Vector2(1, 1));
-                        uvs.Add(new Vector2(0, 1));
                     }
 
                     if ((renderVoxel.sides & RenderVoxel.RIGHT) != 0)
@@ -497,6 +795,10 @@ public class MagicaRenderer
                         vertices.Add(new Vector3((x + 1) * size, z * size, (y + 1) * size));
                         vertices.Add(new Vector3((x + 1) * size, (z + 1) * size, (y + 1) * size));
                         vertices.Add(new Vector3((x + 1) * size, (z + 1) * size, y * size));
+                        colors.Add(renderVoxel.color);
+                        colors.Add(renderVoxel.color);
+                        colors.Add(renderVoxel.color);
+                        colors.Add(renderVoxel.color);
 
                         triangles.Add(startIndex);
                         triangles.Add(startIndex + 3);
@@ -504,20 +806,19 @@ public class MagicaRenderer
                         triangles.Add(startIndex + 2);
                         triangles.Add(startIndex + 1);
                         triangles.Add(startIndex);
-
-                        uvs.Add(new Vector2(0, 0));
-                        uvs.Add(new Vector2(1, 0));
-                        uvs.Add(new Vector2(1, 1));
-                        uvs.Add(new Vector2(0, 1));
                     }
                     if ((renderVoxel.sides & RenderVoxel.BACK) != 0)
                     {
                         int startIndex = vertices.Count;
 
                         vertices.Add(new Vector3(x * size, z * size, y * size));
-                        vertices.Add(new Vector3(x * size, (z+1) * size, y * size));
-                        vertices.Add(new Vector3((x+1) * size, (z+1) * size, y * size));
-                        vertices.Add(new Vector3((x+1) * size, z * size, y * size));
+                        vertices.Add(new Vector3(x * size, (z + 1) * size, y * size));
+                        vertices.Add(new Vector3((x + 1) * size, (z + 1) * size, y * size));
+                        vertices.Add(new Vector3((x + 1) * size, z * size, y * size));
+                        colors.Add(renderVoxel.color);
+                        colors.Add(renderVoxel.color);
+                        colors.Add(renderVoxel.color);
+                        colors.Add(renderVoxel.color);
 
                         triangles.Add(startIndex);
                         triangles.Add(startIndex + 1);
@@ -525,20 +826,19 @@ public class MagicaRenderer
                         triangles.Add(startIndex + 2);
                         triangles.Add(startIndex + 3);
                         triangles.Add(startIndex);
-
-                        uvs.Add(new Vector2(0, 0));
-                        uvs.Add(new Vector2(1, 0));
-                        uvs.Add(new Vector2(1, 1));
-                        uvs.Add(new Vector2(0, 1));
                     }
                     if ((renderVoxel.sides & RenderVoxel.FRONT) != 0)
                     {
                         int startIndex = vertices.Count;
 
-                        vertices.Add(new Vector3(x * size, z * size, (y+1) * size));
-                        vertices.Add(new Vector3(x * size, (z + 1) * size, (y+1) * size));
-                        vertices.Add(new Vector3((x + 1) * size, (z + 1) * size, (y+1) * size));
-                        vertices.Add(new Vector3((x + 1) * size, z * size, (y+1) * size));
+                        vertices.Add(new Vector3(x * size, z * size, (y + 1) * size));
+                        vertices.Add(new Vector3(x * size, (z + 1) * size, (y + 1) * size));
+                        vertices.Add(new Vector3((x + 1) * size, (z + 1) * size, (y + 1) * size));
+                        vertices.Add(new Vector3((x + 1) * size, z * size, (y + 1) * size));
+                        colors.Add(renderVoxel.color);
+                        colors.Add(renderVoxel.color);
+                        colors.Add(renderVoxel.color);
+                        colors.Add(renderVoxel.color);
 
                         triangles.Add(startIndex);
                         triangles.Add(startIndex + 3);
@@ -546,36 +846,25 @@ public class MagicaRenderer
                         triangles.Add(startIndex + 2);
                         triangles.Add(startIndex + 1);
                         triangles.Add(startIndex);
-
-                        uvs.Add(new Vector2(0, 0));
-                        uvs.Add(new Vector2(1, 0));
-                        uvs.Add(new Vector2(1, 1));
-                        uvs.Add(new Vector2(0, 1));
                     }
+
+
                 }
             }
         }
 
-        Mesh mesh = new Mesh();
+        mesh = new Mesh();
         mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
         mesh.vertices = vertices.ToArray();
-        mesh.subMeshCount = colorOrder.Count;
-        for (int i = 0; i < colorOrder.Count; i++) {
-            mesh.SetTriangles(trianglesByColor[colorOrder[i]], i);
-        }
-        mesh.uv = uvs.ToArray();
+        mesh.triangles = triangles.ToArray();
         mesh.RecalculateNormals();
 
         MeshAndColors meshAndColors = new MeshAndColors();
         meshAndColors.mesh = mesh;
-        meshAndColors.colors = colorOrder;
+        meshAndColors.colors = colors;
 
         return meshAndColors;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+
 }

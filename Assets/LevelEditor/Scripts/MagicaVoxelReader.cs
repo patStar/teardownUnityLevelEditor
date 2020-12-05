@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -17,65 +18,77 @@ public class MagicaVoxelReader
     {
         BinaryReader reader = new BinaryReader(File.Open(fileName, FileMode.Open));
 
-        char[] vox = reader.ReadChars(4);
-        int version = reader.ReadInt32();
+        Chunk main = null;
 
-        Chunk main = Chunk.createChunk(reader);
-        Dictionary<int, Chunk> chunksById = new Dictionary<int, Chunk>();       
-        int voxelChunkCounter = 0;
-        Dictionary<int, VoxelModelChunk> voxelNodesById = new Dictionary<int, VoxelModelChunk>();
-
-
-        for (int i = 0; i < main.children.Count; i++)
+        try
         {
-            Chunk chunk = main.children[i];                   
-            if (chunk is ShapeNodeChunk)
-            {
-                chunksById.Add(((ShapeNodeChunk)chunk).nodeId, chunk);
-            }
-            else if (chunk is GroupNodeChunk)
-            {
-                chunksById.Add(((GroupNodeChunk)chunk).nodeId, chunk);
-            }
-            else if (chunk is TransformNodeChunk)
-            {
-                chunksById.Add(((TransformNodeChunk)chunk).nodeId, chunk);
-            }
-            else if (chunk is VoxelModelChunk)
-            {
-                ((VoxelModelChunk)chunk).nodeId = voxelChunkCounter++;
-                voxelNodesById.Add(((VoxelModelChunk)chunk).nodeId, (VoxelModelChunk)chunk);
-            }
-        }
+            char[] vox = reader.ReadChars(4);
+            int version = reader.ReadInt32();
 
-        for (int i = 0; i < main.children.Count; i++)
-        {
-            Chunk chunk = main.children[i];
-            if (chunk is ShapeNodeChunk)
+            main = Chunk.createChunk(reader);
+            Dictionary<int, Chunk> chunksById = new Dictionary<int, Chunk>();
+            int voxelChunkCounter = 0;
+            Dictionary<int, VoxelModelChunk> voxelNodesById = new Dictionary<int, VoxelModelChunk>();
+
+            for (int i = 0; i < main.children.Count; i++)
             {
-                foreach(MagicaModel model in ((ShapeNodeChunk)chunk).childModels)
-                {                    
-                    ((VoxelModelChunk) voxelNodesById[model.modelId]).shapes.Add((ShapeNodeChunk) chunk);
+                Chunk chunk = main.children[i];
+                if (chunk is ShapeNodeChunk)
+                {
+                    chunksById.Add(((ShapeNodeChunk)chunk).nodeId, chunk);
+                }
+                else if (chunk is GroupNodeChunk)
+                {
+                    chunksById.Add(((GroupNodeChunk)chunk).nodeId, chunk);
+                }
+                else if (chunk is TransformNodeChunk)
+                {
+                    chunksById.Add(((TransformNodeChunk)chunk).nodeId, chunk);
+                }
+                else if (chunk is VoxelModelChunk)
+                {
+                    ((VoxelModelChunk)chunk).nodeId = voxelChunkCounter++;
+                    voxelNodesById.Add(((VoxelModelChunk)chunk).nodeId, (VoxelModelChunk)chunk);
                 }
             }
-            else if (chunk is TransformNodeChunk)
+
+            for (int i = 0; i < main.children.Count; i++)
             {
-                if (chunksById[((TransformNodeChunk)chunk).childNodeId] is ShapeNodeChunk)
+                Chunk chunk = main.children[i];
+                if (chunk is ShapeNodeChunk)
                 {
-                    ((ShapeNodeChunk)chunksById[((TransformNodeChunk)chunk).childNodeId]).transform = (TransformNodeChunk)chunk;
-                }else if (chunksById[((TransformNodeChunk)chunk).childNodeId] is GroupNodeChunk)
+                    foreach (MagicaModel model in ((ShapeNodeChunk)chunk).childModels)
+                    {
+                        ((VoxelModelChunk)voxelNodesById[model.modelId]).shapes.Add((ShapeNodeChunk)chunk);
+                    }
+                }
+                else if (chunk is TransformNodeChunk)
                 {
-                    ((GroupNodeChunk)chunksById[((TransformNodeChunk)chunk).childNodeId]).transform = (TransformNodeChunk)chunk;
-                }                
-            }
-            else if (chunk is GroupNodeChunk)
-            {
-                foreach (int childNodeId in ((GroupNodeChunk)chunk).childNodeIds)
+                    if (chunksById[((TransformNodeChunk)chunk).childNodeId] is ShapeNodeChunk)
+                    {
+                        ((ShapeNodeChunk)chunksById[((TransformNodeChunk)chunk).childNodeId]).transform = (TransformNodeChunk)chunk;
+                    }
+                    else if (chunksById[((TransformNodeChunk)chunk).childNodeId] is GroupNodeChunk)
+                    {
+                        ((GroupNodeChunk)chunksById[((TransformNodeChunk)chunk).childNodeId]).transform = (TransformNodeChunk)chunk;
+                    }
+                }
+                else if (chunk is GroupNodeChunk)
                 {
-                    ((TransformNodeChunk)chunksById[childNodeId]).group = (GroupNodeChunk)chunk;
+                    foreach (int childNodeId in ((GroupNodeChunk)chunk).childNodeIds)
+                    {
+                        ((TransformNodeChunk)chunksById[childNodeId]).group = (GroupNodeChunk)chunk;
+                    }
                 }
             }
         }
+        catch(Exception e)
+        {
+            Debug.LogError(e);            
+        }        
+
+
+        reader.Close();        
 
         return main;
     }
@@ -86,7 +99,8 @@ public class MagicaString
     public static string readString(BinaryReader reader)
     {
         int byteLength = reader.ReadInt32();
-        return new string(reader.ReadChars(byteLength));
+        byte[] stringBytes = reader.ReadBytes(byteLength);        
+        return Encoding.UTF8.GetString(stringBytes, 0, stringBytes.Length);
     }
 }
 
@@ -124,7 +138,8 @@ public class DefaultChunkParser : ChunkParser
         chunk.bytesInChildren = reader.ReadInt32();
         chunk.content = reader.ReadBytes(chunk.bytesInChunk);
 
-        long currentPosition = reader.BaseStream.Position;
+        long currentPosition = reader.BaseStream.Position;        
+
         while (reader.BaseStream.Position < currentPosition + chunk.bytesInChildren)
         {
             Chunk childChunk = Chunk.createChunk(reader);
@@ -340,7 +355,7 @@ public class TransformNodeParser : ChunkParser
         chunk.layerId = reader.ReadInt32();
         chunk.numberOfFrames = reader.ReadInt32();
 
-        for(int i=0; i<chunk.numberOfFrames; i++)
+        if(chunk.numberOfFrames == 1)
         {
             chunk.frameAttributes.Add(MagicaDictionary.readDictionary(reader));
         }
